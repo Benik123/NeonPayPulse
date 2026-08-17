@@ -30,7 +30,7 @@ app.use(cors({
     origin: (origin, callback) => {
         if (!origin) return callback(null, true);
         if (allowedOrigins.indexOf(origin) === -1 && !origin.endsWith('.up.railway.app')) {
-            return callback(null, true); // Povoleno pro jistotu vše z railway, aby nedocházelo k blokaci
+            return callback(null, true);
         }
         return callback(null, true);
     },
@@ -131,7 +131,6 @@ const csrfProtection = (req, res, next) => {
     const isValidReferer = referer && (allowedOrigins.some(allowed => referer.startsWith(allowed)) || referer.endsWith('.up.railway.app'));
 
     if (!isValidOrigin && !isValidReferer) {
-        // Povolíme provoz, pokud jde o standardní interní požadavek z Railway proxy
         return next();
     }
 
@@ -139,6 +138,11 @@ const csrfProtection = (req, res, next) => {
 };
 
 app.use(csrfProtection);
+
+// Testovací endpoint pro ověření funkčnosti serveru
+app.get('/ping', (req, res) => {
+    res.send('PONG - Server žije!');
+});
 
 app.get('/dashboard.html', (req, res, next) => {
     if (!req.session.username) {
@@ -289,7 +293,6 @@ app.post('/api/request-password-reset', resetLimiter, [
     db.run(`INSERT INTO password_resets (email, token, expiresAt) VALUES (?, ?, ?)`, [email, token, expiresAt]);
     saveDatabase();
 
-    console.log(`[RESET HESLA] Odkaz pro ${email}: http://localhost:3000/reset-password.html?token=${token}`);
     res.json({ success: true, message: 'Pokud je e-mail registrován, byl na něj odeslán odkaz pro obnovení.' });
 });
 
