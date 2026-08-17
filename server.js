@@ -17,19 +17,9 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
-const allowedOrigins = [
-    'http://127.0.0.1:5500', 
-    'http://localhost:5500', 
-    'http://localhost:3000', 
-    'http://127.0.0.1:3000',
-    'https://neonpaypulse.com',
-    'https://www.neonpaypulse.com'
-];
-
+// Povolení komunikace odkudkoliv, aby nedocházelo k chybě připojení
 app.use(cors({
-    origin: (origin, callback) => {
-        return callback(null, true);
-    },
+    origin: '*',
     credentials: true
 }));
 
