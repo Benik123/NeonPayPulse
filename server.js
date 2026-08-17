@@ -584,7 +584,6 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, error: 'Nastala neošetřená chyba na serveru.' });
 });
 
-// KLÍČOVÁ ZMĚNA: Celý Express server se spustí až v okamžiku, kdy je sql.js kompletně načtený a tabulky vytvořené
 initSqlJs({
     locateFile: file => path.join(__dirname, 'node_modules', 'sql.js', 'dist', file)
 }).then(SQL => {
