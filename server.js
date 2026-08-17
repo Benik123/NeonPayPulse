@@ -105,9 +105,13 @@ const dbFile = path.join(__dirname, 'database.sqlite');
 
 function saveDatabase() {
     if (db) {
-        const data = db.export();
-        const buffer = Buffer.from(data);
-        fs.writeFileSync(dbFile, buffer);
+        try {
+            const data = db.export();
+            const buffer = Buffer.from(data);
+            fs.writeFileSync(dbFile, buffer);
+        } catch (e) {
+            console.error('Chyba při ukládání databáze:', e);
+        }
     }
 }
 
@@ -115,21 +119,6 @@ const csrfProtection = (req, res, next) => {
     if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
         return next();
     }
-
-    const origin = req.get('origin');
-    const referer = req.get('referer');
-    
-    if (!origin && !referer) {
-        return next();
-    }
-
-    const isValidOrigin = origin && (allowedOrigins.some(allowed => origin.startsWith(allowed)) || origin.endsWith('.up.railway.app'));
-    const isValidReferer = referer && (allowedOrigins.some(allowed => referer.startsWith(allowed)) || referer.endsWith('.up.railway.app'));
-
-    if (!isValidOrigin && !isValidReferer) {
-        return next();
-    }
-
     next();
 };
 
@@ -147,6 +136,7 @@ app.get('/dashboard.html', (req, res, next) => {
 });
 
 app.post('/api/delete-account', async (req, res) => {
+    if (!db) return res.status(503).json({ success: false, error: 'Databáze se připravuje' });
     if (!req.session.username) return res.status(401).json({ success: false, error: 'Nepřihlášen' });
     const { password } = req.body;
     
@@ -173,6 +163,7 @@ app.post('/api/register', registerLimiter, [
     body('email').isEmail().normalizeEmail().withMessage('Zadej platnou emailovou adresu.'),
     body('password').isLength({ min: 6 }).withMessage('Heslo musí mít alespoň 6 znaků.')
 ], async (req, res) => {
+    if (!db) return res.status(503).json({ success: false, error: 'Databáze se připravuje' });
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.json({ success: false, error: errors.array()[0].msg });
@@ -212,6 +203,7 @@ app.post('/api/login', loginLimiter, [
     body('username').trim().escape().notEmpty().withMessage('Zadej uživatelské jméno.'),
     body('password').notEmpty().withMessage('Zadej heslo.')
 ], async (req, res) => {
+    if (!db) return res.status(503).json({ success: false, error: 'Databáze se připravuje' });
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.json({ success: false, error: errors.array()[0].msg });
@@ -263,6 +255,7 @@ app.post('/api/login', loginLimiter, [
 app.post('/api/request-password-reset', resetLimiter, [
     body('email').isEmail().normalizeEmail().withMessage('Zadej platnou emailovou adresu.')
 ], (req, res) => {
+    if (!db) return res.status(503).json({ success: false, error: 'Databáze se připravuje' });
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.json({ success: false, error: errors.array()[0].msg });
@@ -295,6 +288,7 @@ app.post('/api/reset-password', [
     body('token').notEmpty().withMessage('Chybí token.'),
     body('newPassword').isLength({ min: 6 }).withMessage('Nové heslo musí mít alespoň 6 znaků.')
 ], async (req, res) => {
+    if (!db) return res.status(503).json({ success: false, error: 'Databáze se připravuje' });
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.json({ success: false, error: errors.array()[0].msg });
@@ -332,6 +326,7 @@ app.post('/api/logout', (req, res) => {
 });
 
 app.get('/api/user', (req, res) => {
+    if (!db) return res.status(503).json({ success: false, error: 'Databáze se připravuje' });
     if (!req.session.username) {
         return res.status(401).json({ success: false, error: 'Nepřihlášen' });
     }
@@ -358,6 +353,7 @@ app.get('/api/user', (req, res) => {
 });
 
 app.post('/api/buy-vip', earnLimiter, (req, res) => {
+    if (!db) return res.status(503).json({ success: false, error: 'Databáze se připravuje' });
     if (!req.session.username) return res.status(401).json({ success: false, error: 'Nepřihlášen' });
 
     const vipPrice = 200.00;
@@ -394,6 +390,7 @@ app.post('/api/buy-vip', earnLimiter, (req, res) => {
 });
 
 app.get('/api/referral-stats', (req, res) => {
+    if (!db) return res.status(503).json({ success: false, error: 'Databáze se připravuje' });
     if (!req.session.username) return res.status(401).json({ success: false });
 
     const stmt = db.prepare(`SELECT referralCode FROM users WHERE username = ?`);
@@ -430,6 +427,7 @@ app.get('/api/referral-stats', (req, res) => {
 });
 
 app.get('/api/logs', (req, res) => {
+    if (!db) return res.status(503).json({ success: false, error: 'Databáze se připravuje' });
     if (!req.session.username) {
         return res.status(401).json({ success: false, error: 'Nepřihlášen' });
     }
@@ -468,6 +466,7 @@ app.get('/api/logs', (req, res) => {
 const userLastEarnAttempt = new Map();
 
 app.post('/api/earn', earnLimiter, (req, res) => {
+    if (!db) return res.status(503).json({ success: false, error: 'Databáze se připravuje' });
     if (!req.session.username) return res.status(401).json({ success: false, error: 'Nepřihlášen' });
 
     const { actionType, website } = req.body; 
@@ -585,7 +584,6 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, error: 'Nastala neošetřená chyba na serveru.' });
 });
 
-// Správná inicializace sql.js s lokací wasm souboru pro Railway
 initSqlJs({
     locateFile: file => path.join(__dirname, 'node_modules', 'sql.js', 'dist', file)
 }).then(SQL => {
