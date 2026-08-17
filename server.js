@@ -2,7 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const initSqlJs = require('sql.js');
+const fs = require('fs');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit'); 
@@ -13,9 +14,7 @@ const { body, validationResult } = require('express-validator');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Důležité pro Railway a cloudové proxy, aby správně fungovaly limity a IP adresy
 app.set('trust proxy', 1);
-
 app.disable('x-powered-by');
 
 const allowedOrigins = [
@@ -46,7 +45,6 @@ app.use(helmet({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -106,6 +104,68 @@ const resetLimiter = rateLimit({
     message: { success: false, error: 'Příliš mnoho pokusů o reset hesla. Zkuste to za hodinu.' }
 });
 
+let db = null;
+const dbFile = path.join(__dirname, 'database.sqlite');
+
+function saveDatabase() {
+    if (db) {
+        const data = db.export();
+        const buffer = Buffer.from(data);
+        fs.writeFileSync(dbFile, buffer);
+    }
+}
+
+initSqlJs().then(SQL => {
+    try {
+        const buffer = fs.existsSync(dbFile) ? fs.readFileSync(dbFile) : null;
+        db = new SQL.Database(buffer);
+        console.log('Připojeno k SQLite databázi (sql.js).');
+
+        db.run(`CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            email TEXT UNIQUE,
+            password TEXT,
+            balance REAL DEFAULT 0.00,
+            hasBooster INTEGER DEFAULT 0,
+            referralCode TEXT,
+            referredBy TEXT,
+            lastDailyDate TEXT,
+            lastClickAd INTEGER DEFAULT 0,
+            lastVideo INTEGER DEFAULT 0,
+            lastSurvey INTEGER DEFAULT 0,
+            lastIp TEXT,
+            failedLoginAttempts INTEGER DEFAULT 0,
+            lockUntil DATETIME DEFAULT NULL
+        )`);
+
+        db.run(`CREATE TABLE IF NOT EXISTS logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            action TEXT,
+            amount REAL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        db.run(`CREATE TABLE IF NOT EXISTS password_resets (
+            email TEXT,
+            token TEXT,
+            expiresAt DATETIME
+        )`);
+
+        db.run(`CREATE TABLE IF NOT EXISTS security_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip TEXT,
+            event TEXT,
+            details TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+        saveDatabase();
+    } catch (err) {
+        console.error('Chyba při inicializaci databáze:', err.message);
+    }
+});
+
 const csrfProtection = (req, res, next) => {
     if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
         return next();
@@ -123,7 +183,10 @@ const csrfProtection = (req, res, next) => {
 
     if (!isValidOrigin && !isValidReferer) {
         const clientIp = req.ip || 'unknown';
-        db.run(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, [clientIp, 'CSRF_VIOLATION', `Origin: ${origin}, Referer: ${referer}`]);
+        if (db) {
+            db.run(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, [clientIp, 'CSRF_VIOLATION', `Origin: ${origin}, Referer: ${referer}`]);
+            saveDatabase();
+        }
         return res.status(403).json({ success: false, error: 'CSRF ochrana: Neplatný původ požadavku.' });
     }
 
@@ -139,67 +202,26 @@ app.get('/dashboard.html', (req, res, next) => {
     next();
 });
 
-const dbFile = path.join(__dirname, 'database.sqlite');
-const db = new sqlite3.Database(dbFile, (err) => {
-    if (err) {
-        console.error('Chyba při otevírání databáze:', err.message);
-    } else {
-        console.log('Připojeno k SQLite databázi.');
-    }
-});
-
-db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
-    email TEXT UNIQUE,
-    password TEXT,
-    balance REAL DEFAULT 0.00,
-    hasBooster INTEGER DEFAULT 0,
-    referralCode TEXT,
-    referredBy TEXT,
-    lastDailyDate TEXT,
-    lastClickAd INTEGER DEFAULT 0,
-    lastVideo INTEGER DEFAULT 0,
-    lastSurvey INTEGER DEFAULT 0,
-    lastIp TEXT,
-    failedLoginAttempts INTEGER DEFAULT 0,
-    lockUntil DATETIME DEFAULT NULL
-)`);
-
-db.run(`CREATE TABLE IF NOT EXISTS logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT,
-    action TEXT,
-    amount REAL,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-)`);
-
-db.run(`CREATE TABLE IF NOT EXISTS password_resets (
-    email TEXT,
-    token TEXT,
-    expiresAt DATETIME
-)`);
-
-db.run(`CREATE TABLE IF NOT EXISTS security_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ip TEXT,
-    event TEXT,
-    details TEXT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-)`);
-
 app.post('/api/delete-account', async (req, res) => {
     if (!req.session.username) return res.status(401).json({ success: false, error: 'Nepřihlášen' });
     const { password } = req.body;
-    db.get(`SELECT password FROM users WHERE username = ?`, [req.session.username], async (err, user) => {
-        if (err || !user) return res.json({ success: false, error: 'Uživatel nenalezen.' });
-        const match = await bcrypt.compare(password, user.password);
-        if (!match) return res.json({ success: false, error: 'Nesprávné heslo.' });
-        db.run(`DELETE FROM users WHERE username = ?`, [req.session.username], () => {
-            req.session.destroy();
-            res.json({ success: true });
-        });
-    });
+    
+    const stmt = db.prepare(`SELECT password FROM users WHERE username = ?`);
+    stmt.bind([req.session.username]);
+    let user = null;
+    if (stmt.step()) {
+        user = stmt.getAsObject();
+    }
+    stmt.free();
+
+    if (!user) return res.json({ success: false, error: 'Uživatel nenalezen.' });
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.json({ success: false, error: 'Nesprávné heslo.' });
+    
+    db.run(`DELETE FROM users WHERE username = ?`, [req.session.username]);
+    saveDatabase();
+    req.session.destroy();
+    res.json({ success: true });
 });
 
 app.post('/api/register', registerLimiter, [
@@ -213,30 +235,30 @@ app.post('/api/register', registerLimiter, [
     }
 
     const { username, email, password, refCode, website } = req.body; 
-    
+    const clientIp = req.ip || 'unknown';
+
     if (website) {
-        db.run(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, [req.ip || 'unknown', 'BOT_DETECTED', `Registration bot trap triggered`]);
+        db.run(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, [clientIp, 'BOT_DETECTED', `Registration bot trap triggered`]);
+        saveDatabase();
         return res.status(403).json({ success: false, error: 'Detekován bot.' });
     }
-
-    const clientIp = req.ip || 'unknown';
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const myRefCode = username + Math.floor(1000 + Math.random() * 9000);
 
-        const query = `INSERT INTO users (username, email, password, balance, hasBooster, referralCode, referredBy, lastDailyDate, lastClickAd, lastVideo, lastSurvey, lastIp) VALUES (?, ?, ?, 0.00, 0, ?, ?, NULL, 0, 0, 0, ?)`;
-        
-        db.run(query, [username, email, hashedPassword, myRefCode, refCode || null, clientIp], function(err) {
-            if (err) {
-                return res.json({ success: false, error: 'Uživatelské jméno nebo email je již obsazený.' });
-            }
-
+        try {
+            db.run(`INSERT INTO users (username, email, password, balance, hasBooster, referralCode, referredBy, lastDailyDate, lastClickAd, lastVideo, lastSurvey, lastIp) VALUES (?, ?, ?, 0.00, 0, ?, ?, NULL, 0, 0, 0, ?)`, 
+                [username, email, hashedPassword, myRefCode, refCode || null, clientIp]);
+            
             db.run(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`, [username, 'registracia', 0]);
+            saveDatabase();
 
             req.session.username = username;
             res.json({ success: true });
-        });
+        } catch (err) {
+            return res.json({ success: false, error: 'Uživatelské jméno nebo email je již obsazený.' });
+        }
     } catch (error) {
         res.json({ success: false, error: 'Chyba při zpracování hesla.' });
     }
@@ -245,7 +267,7 @@ app.post('/api/register', registerLimiter, [
 app.post('/api/login', loginLimiter, [
     body('username').trim().escape().notEmpty().withMessage('Zadej uživatelské jméno.'),
     body('password').notEmpty().withMessage('Zadej heslo.')
-], (req, res) => {
+], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.json({ success: false, error: errors.array()[0].msg });
@@ -254,36 +276,44 @@ app.post('/api/login', loginLimiter, [
     const { username, password } = req.body;
     const clientIp = req.ip || 'unknown';
 
-    db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user) => {
-        if (err || !user) {
-            return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
+    const stmt = db.prepare(`SELECT * FROM users WHERE username = ?`);
+    stmt.bind([username]);
+    let user = null;
+    if (stmt.step()) {
+        user = stmt.getAsObject();
+    }
+    stmt.free();
+
+    if (!user) {
+        return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
+    }
+
+    if (user.lockUntil && new Date(user.lockUntil) > new Date()) {
+        return res.status(429).json({ success: false, error: 'Účet je dočasně uzamčen kvůli příliš mnoha neúspěšným pokusům. Zkuste to za 15 minut.' });
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+        const failedAttempts = (user.failedLoginAttempts || 0) + 1;
+        let lockTime = null;
+
+        if (failedAttempts >= 5) {
+            lockTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+            db.run(`UPDATE users SET failedLoginAttempts = ?, lockUntil = ? WHERE username = ?`, [failedAttempts, lockTime, username]);
+        } else {
+            db.run(`UPDATE users SET failedLoginAttempts = ? WHERE username = ?`, [failedAttempts, username]);
         }
 
-        if (user.lockUntil && new Date(user.lockUntil) > new Date()) {
-            return res.status(429).json({ success: false, error: 'Účet je dočasně uzamčen kvůli příliš mnoha neúspěšným pokusům. Zkuste to za 15 minut.' });
-        }
+        db.run(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, [clientIp, 'FAILED_LOGIN', `Failed login for: ${username} (Attempt ${failedAttempts})`]);
+        saveDatabase();
+        return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
+    }
 
-        const match = await bcrypt.compare(password, user.password);
-        if (!match) {
-            const failedAttempts = (user.failedLoginAttempts || 0) + 1;
-            let lockTime = null;
+    db.run(`UPDATE users SET lastIp = ?, failedLoginAttempts = 0, lockUntil = NULL WHERE username = ?`, [clientIp, username]);
+    saveDatabase();
 
-            if (failedAttempts >= 5) {
-                lockTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-                db.run(`UPDATE users SET failedLoginAttempts = ?, lockUntil = ? WHERE username = ?`, [failedAttempts, lockTime, username]);
-            } else {
-                db.run(`UPDATE users SET failedLoginAttempts = ? WHERE username = ?`, [failedAttempts, username]);
-            }
-
-            db.run(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, [clientIp, 'FAILED_LOGIN', `Failed login for: ${username} (Attempt ${failedAttempts})`]);
-            return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
-        }
-
-        db.run(`UPDATE users SET lastIp = ?, failedLoginAttempts = 0, lockUntil = NULL WHERE username = ?`, [clientIp, username]);
-
-        req.session.username = username;
-        res.json({ success: true });
-    });
+    req.session.username = username;
+    res.json({ success: true });
 });
 
 app.post('/api/request-password-reset', resetLimiter, [
@@ -296,19 +326,26 @@ app.post('/api/request-password-reset', resetLimiter, [
 
     const { email } = req.body;
     
-    db.get(`SELECT username FROM users WHERE email = ?`, [email], (err, user) => {
-        if (!user) {
-            return res.json({ success: true, message: 'Pokud je e-mail registrován, byl na něj odeslán odkaz pro obnovení.' });
-        }
+    const stmt = db.prepare(`SELECT username FROM users WHERE email = ?`);
+    stmt.bind([email]);
+    let user = null;
+    if (stmt.step()) {
+        user = stmt.getAsObject();
+    }
+    stmt.free();
 
-        const token = crypto.randomBytes(20).toString('hex');
-        const expiresAt = new Date(Date.now() + 3600000).toISOString();
+    if (!user) {
+        return res.json({ success: true, message: 'Pokud je e-mail registrován, byl na něj odeslán odkaz pro obnovení.' });
+    }
 
-        db.run(`INSERT INTO password_resets (email, token, expiresAt) VALUES (?, ?, ?)`, [email, token, expiresAt], () => {
-            console.log(`[RESET HESLA] Odkaz pro ${email}: http://localhost:3000/reset-password.html?token=${token}`);
-            res.json({ success: true, message: 'Pokud je e-mail registrován, byl na něj odeslán odkaz pro obnovení.' });
-        });
-    });
+    const token = crypto.randomBytes(20).toString('hex');
+    const expiresAt = new Date(Date.now() + 3600000).toISOString();
+
+    db.run(`INSERT INTO password_resets (email, token, expiresAt) VALUES (?, ?, ?)`, [email, token, expiresAt]);
+    saveDatabase();
+
+    console.log(`[RESET HESLA] Odkaz pro ${email}: http://localhost:3000/reset-password.html?token=${token}`);
+    res.json({ success: true, message: 'Pokud je e-mail registrován, byl na něj odeslán odkaz pro obnovení.' });
 });
 
 app.post('/api/reset-password', [
@@ -322,21 +359,27 @@ app.post('/api/reset-password', [
 
     const { token, newPassword } = req.body;
 
-    db.get(`SELECT * FROM password_resets WHERE token = ? AND expiresAt > ?`, [token, new Date().toISOString()], async (err, row) => {
-        if (!row) {
-            return res.json({ success: false, error: 'Neplatný nebo již vypršený token pro obnovu hesla.' });
-        }
+    const stmt = db.prepare(`SELECT * FROM password_resets WHERE token = ? AND expiresAt > ?`);
+    stmt.bind([token, new Date().toISOString()]);
+    let row = null;
+    if (stmt.step()) {
+        row = stmt.getAsObject();
+    }
+    stmt.free();
 
-        try {
-            const hashedPassword = await bcrypt.hash(newPassword, 10);
-            db.run(`UPDATE users SET password = ? WHERE email = ?`, [hashedPassword, row.email], () => {
-                db.run(`DELETE FROM password_resets WHERE token = ?`, [token]);
-                res.json({ success: true, message: 'Heslo bylo úspěšně změněno! Nyní se můžeš přihlásit.' });
-            });
-        } catch (error) {
-            res.json({ success: false, error: 'Chyba při zpracování nového hesla.' });
-        }
-    });
+    if (!row) {
+        return res.json({ success: false, error: 'Neplatný nebo již vypršený token pro obnovu hesla.' });
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        db.run(`UPDATE users SET password = ? WHERE email = ?`, [hashedPassword, row.email]);
+        db.run(`DELETE FROM password_resets WHERE token = ?`, [token]);
+        saveDatabase();
+        res.json({ success: true, message: 'Heslo bylo úspěšně změněno! Nyní se můžeš přihlásit.' });
+    } catch (error) {
+        res.json({ success: false, error: 'Chyba při zpracování nového hesla.' });
+    }
 });
 
 app.post('/api/logout', (req, res) => {
@@ -350,18 +393,24 @@ app.get('/api/user', (req, res) => {
         return res.status(401).json({ success: false, error: 'Nepřihlášen' });
     }
 
-    db.get(`SELECT username, email, balance, hasBooster, referralCode FROM users WHERE username = ?`, [req.session.username], (err, user) => {
-        if (err || !user) {
-            return res.status(404).json({ success: false, error: 'Uživatel nenalezen' });
-        }
-        res.json({
-            success: true,
-            username: user.username,
-            email: user.email,
-            balance: Number(user.balance.toFixed(2)),
-            hasBooster: user.hasBooster,
-            referralCode: user.referralCode || 'Neznámý'
-        });
+    const stmt = db.prepare(`SELECT username, email, balance, hasBooster, referralCode FROM users WHERE username = ?`);
+    stmt.bind([req.session.username]);
+    let user = null;
+    if (stmt.step()) {
+        user = stmt.getAsObject();
+    }
+    stmt.free();
+
+    if (!user) {
+        return res.status(404).json({ success: false, error: 'Uživatel nenalezen' });
+    }
+    res.json({
+        success: true,
+        username: user.username,
+        email: user.email,
+        balance: Number(user.balance.toFixed(2)),
+        hasBooster: user.hasBooster,
+        referralCode: user.referralCode || 'Neznámý'
     });
 });
 
@@ -370,53 +419,70 @@ app.post('/api/buy-vip', earnLimiter, (req, res) => {
 
     const vipPrice = 200.00;
 
-    db.get(`SELECT balance, hasBooster FROM users WHERE username = ?`, [req.session.username], (err, user) => {
-        if (err || !user) return res.json({ success: false, error: 'Uživatel nenalezen.' });
+    const stmt = db.prepare(`SELECT balance, hasBooster FROM users WHERE username = ?`);
+    stmt.bind([req.session.username]);
+    let user = null;
+    if (stmt.step()) {
+        user = stmt.getAsObject();
+    }
+    stmt.free();
 
-        if (user.hasBooster === 1) {
-            return res.json({ success: false, error: 'VIP balíček již máš aktivní!' });
-        }
+    if (!user) return res.json({ success: false, error: 'Uživatel nenalezen.' });
 
-        if (user.balance < vipPrice) {
-            return res.json({ success: false, error: `Nemáš dostatek peněz. VIP stojí ${vipPrice} Kč, tvůj zůstatek je ${user.balance} Kč.` });
-        }
+    if (user.hasBooster === 1) {
+        return res.json({ success: false, error: 'VIP balíček již máš aktivní!' });
+    }
 
-        const newBalance = Number((user.balance - vipPrice).toFixed(2));
+    if (user.balance < vipPrice) {
+        return res.json({ success: false, error: `Nemáš dostatek peněz. VIP stojí ${vipPrice} Kč, tvůj zůstatek je ${user.balance} Kč.` });
+    }
 
-        db.run(`UPDATE users SET balance = ?, hasBooster = 1 WHERE username = ?`, [newBalance, req.session.username], (updateErr) => {
-            if (updateErr) return res.json({ success: false, error: 'Chyba databáze při nákupu VIP.' });
+    const newBalance = Number((user.balance - vipPrice).toFixed(2));
 
-            db.run(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`, [req.session.username, 'nákup-vip', -vipPrice]);
+    db.run(`UPDATE users SET balance = ?, hasBooster = 1 WHERE username = ?`, [newBalance, req.session.username]);
+    db.run(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`, [req.session.username, 'nákup-vip', -vipPrice]);
+    saveDatabase();
 
-            res.json({
-                success: true,
-                newBalance: newBalance,
-                message: 'Gratuluji! VIP balíček byl úspěšně aktivován.'
-            });
-        });
+    res.json({
+        success: true,
+        newBalance: newBalance,
+        message: 'Gratuluji! VIP balíček byl úspěšně aktivován.'
     });
 });
 
 app.get('/api/referral-stats', (req, res) => {
     if (!req.session.username) return res.status(401).json({ success: false });
 
-    db.get(`SELECT referralCode FROM users WHERE username = ?`, [req.session.username], (err, user) => {
-        if (!user || !user.referralCode) return res.json({ success: false, l1Count: 0, l2Count: 0, totalReferred: 0 });
+    const stmt = db.prepare(`SELECT referralCode FROM users WHERE username = ?`);
+    stmt.bind([req.session.username]);
+    let user = null;
+    if (stmt.step()) {
+        user = stmt.getAsObject();
+    }
+    stmt.free();
 
-        db.all(`SELECT username, referralCode, referredBy FROM users`, [], (err, allUsers) => {
-            if (err) return res.json({ success: false, l1Count: 0, l2Count: 0, totalReferred: 0 });
+    if (!user || !user.referralCode) return res.json({ success: false, l1Count: 0, l2Count: 0, totalReferred: 0 });
 
-            const level1 = allUsers.filter(u => u.referredBy === user.referralCode);
-            const level1Codes = level1.map(u => u.referralCode).filter(Boolean);
-            const level2 = allUsers.filter(u => level1Codes.includes(u.referredBy));
-
-            res.json({
-                success: true,
-                l1Count: level1.length,
-                l2Count: level2.length,
-                totalReferred: level1.length + level2.length
-            });
+    const allUsersResult = db.exec(`SELECT username, referralCode, referredBy FROM users`);
+    let allUsers = [];
+    if (allUsersResult.length > 0) {
+        const columns = allUsersResult[0].columns;
+        allUsers = allUsersResult[0].values.map(row => {
+            let obj = {};
+            columns.forEach((col, index) => obj[col] = row[index]);
+            return obj;
         });
+    }
+
+    const level1 = allUsers.filter(u => u.referredBy === user.referralCode);
+    const level1Codes = level1.map(u => u.referralCode).filter(Boolean);
+    const level2 = allUsers.filter(u => level1Codes.includes(u.referredBy));
+
+    res.json({
+        success: true,
+        l1Count: level1.length,
+        l2Count: level2.length,
+        totalReferred: level1.length + level2.length
     });
 });
 
@@ -429,24 +495,30 @@ app.get('/api/logs', (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
 
-    db.get(`SELECT COUNT(*) as count FROM logs WHERE username = ?`, [req.session.username], (err, countRow) => {
-        if (err) {
-            return res.json({ success: false, error: 'Chyba databáze' });
-        }
+    const countStmt = db.prepare(`SELECT COUNT(*) as count FROM logs WHERE username = ?`);
+    countStmt.bind([req.session.username]);
+    let countRow = null;
+    if (countStmt.step()) {
+        const obj = countStmt.getAsObject();
+        countRow = { count: obj.count };
+    }
+    countStmt.free();
 
-        const totalLogs = countRow ? countRow.count : 0;
-        const totalPages = Math.ceil(totalLogs / limit) || 1;
+    const totalLogs = countRow ? countRow.count : 0;
+    const totalPages = Math.ceil(totalLogs / limit) || 1;
 
-        db.all(`SELECT action, amount, timestamp FROM logs WHERE username = ? ORDER BY id DESC LIMIT ? OFFSET ?`, [req.session.username, limit, offset], (err, rows) => {
-            if (err) {
-                return res.json({ success: false, error: 'Chyba databáze' });
-            }
-            res.json({ 
-                success: true, 
-                logs: rows,
-                totalPages: totalPages 
-            });
-        });
+    const logsStmt = db.prepare(`SELECT action, amount, timestamp FROM logs WHERE username = ? ORDER BY id DESC LIMIT ? OFFSET ?`);
+    logsStmt.bind([req.session.username, limit, offset]);
+    let rows = [];
+    while (logsStmt.step()) {
+        rows.push(logsStmt.getAsObject());
+    }
+    logsStmt.free();
+
+    res.json({ 
+        success: true, 
+        logs: rows,
+        totalPages: totalPages 
     });
 });
 
@@ -456,14 +528,15 @@ app.post('/api/earn', earnLimiter, (req, res) => {
     if (!req.session.username) return res.status(401).json({ success: false, error: 'Nepřihlášen' });
 
     const { actionType, website } = req.body; 
+    const clientIp = req.ip || 'unknown';
+
     if (website) {
-        db.run(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, [req.ip || 'unknown', 'BOT_TRAP_EARN', `Earn bot trap triggered by: ${req.session.username}`]);
+        db.run(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, [clientIp, 'BOT_TRAP_EARN', `Earn bot trap triggered by: ${req.session.username}`]);
+        saveDatabase();
         return res.status(403).json({ success: false, error: 'Detekován podvodný skript.' });
     }
 
     const now = Date.now();
-    const clientIp = req.ip || 'unknown';
-
     const lastAttempt = userLastEarnAttempt.get(req.session.username) || 0;
     if (now - lastAttempt < 1000) { 
         return res.status(429).json({ success: false, error: 'Příliš rychlá akce. Zpomal.' });
@@ -479,70 +552,88 @@ app.post('/api/earn', earnLimiter, (req, res) => {
 
     if (!configs[actionType]) {
         db.run(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, [clientIp, 'INVALID_EARN_ACTION', `User ${req.session.username} tried: ${actionType}`]);
+        saveDatabase();
         return res.json({ success: false, error: 'Neznámá akce.' });
     }
 
-    db.get(`SELECT * FROM users WHERE username = ?`, [req.session.username], (err, user) => {
-        if (err || !user) return res.json({ success: false, error: 'Uživatel nenalezen.' });
+    const stmt = db.prepare(`SELECT * FROM users WHERE username = ?`);
+    stmt.bind([req.session.username]);
+    let user = null;
+    if (stmt.step()) {
+        user = stmt.getAsObject();
+    }
+    stmt.free();
 
-        if (actionType === 'daily-bonus') {
-            const todayStr = new Date().toISOString().split('T')[0];
-            if (user.lastDailyDate === todayStr) {
-                return res.json({ success: false, error: 'Denní bonus sis již dnes vyzvedl! Přijď zase zítra po půlnoci.' });
-            }
-            db.run(`UPDATE users SET lastDailyDate = ?, lastIp = ? WHERE username = ?`, [todayStr, clientIp, req.session.username]);
-        } else {
-            const config = configs[actionType];
-            const lastTime = user[config.col] || 0;
-            const elapsedSeconds = (now - lastTime) / 1000;
+    if (!user) return res.json({ success: false, error: 'Uživatel nenalezen.' });
 
-            if (elapsedSeconds < config.cooldown) {
-                const waitTime = Math.ceil(config.cooldown - elapsedSeconds);
-                return res.json({ success: false, error: `Příliš brzy! Počkej ještě ${waitTime} sekund.` });
-            }
+    if (actionType === 'daily-bonus') {
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (user.lastDailyDate === todayStr) {
+            return res.json({ success: false, error: 'Denní bonus sis již dnes vyzvedl! Přijď zase zítra po půlnoci.' });
+        }
+        db.run(`UPDATE users SET lastDailyDate = ?, lastIp = ? WHERE username = ?`, [todayStr, clientIp, req.session.username]);
+    } else {
+        const config = configs[actionType];
+        const lastTime = user[config.col] || 0;
+        const elapsedSeconds = (now - lastTime) / 1000;
 
-            db.run(`UPDATE users SET ${config.col} = ?, lastIp = ? WHERE username = ?`, [now, clientIp, req.session.username]);
+        if (elapsedSeconds < config.cooldown) {
+            const waitTime = Math.ceil(config.cooldown - elapsedSeconds);
+            return res.json({ success: false, error: `Příliš brzy! Počkej ještě ${waitTime} sekund.` });
         }
 
-        let baseReward = configs[actionType].reward;
-        if (user.hasBooster === 1) {
-            baseReward *= 2; 
+        db.run(`UPDATE users SET ${config.col} = ?, lastIp = ? WHERE username = ?`, [now, clientIp, req.session.username]);
+    }
+
+    let baseReward = configs[actionType].reward;
+    if (user.hasBooster === 1) {
+        baseReward *= 2; 
+    }
+
+    const userShare = Number((baseReward * 0.50).toFixed(2));
+    const level1Share = Number((baseReward * 0.10).toFixed(2));
+    const level2Share = Number((baseReward * 0.05).toFixed(2));
+    const newBalance = Number((user.balance + userShare).toFixed(2));
+
+    db.run(`UPDATE users SET balance = ? WHERE username = ?`, [newBalance, req.session.username]);
+    db.run(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`, [req.session.username, actionType, userShare]);
+
+    if (user.referredBy) {
+        const l1Stmt = db.prepare(`SELECT username, balance, referredBy FROM users WHERE referralCode = ?`);
+        l1Stmt.bind([user.referredBy]);
+        let level1User = null;
+        if (l1Stmt.step()) {
+            level1User = l1Stmt.getAsObject();
         }
+        l1Stmt.free();
 
-        const userShare = Number((baseReward * 0.50).toFixed(2));
-        const level1Share = Number((baseReward * 0.10).toFixed(2));
-        const level2Share = Number((baseReward * 0.05).toFixed(2));
-        const newBalance = Number((user.balance + userShare).toFixed(2));
+        if (level1User) {
+            const newL1Balance = Number((level1User.balance + level1Share).toFixed(2));
+            db.run(`UPDATE users SET balance = ? WHERE username = ?`, [newL1Balance, level1User.username]);
 
-        db.run(`UPDATE users SET balance = ? WHERE username = ?`, [newBalance, req.session.username], (updateErr) => {
-            if (updateErr) return res.json({ success: false, error: 'Chyba databáze.' });
+            if (level1User.referredBy) {
+                const l2Stmt = db.prepare(`SELECT username, balance FROM users WHERE referralCode = ?`);
+                l2Stmt.bind([level1User.referredBy]);
+                let level2User = null;
+                if (l2Stmt.step()) {
+                    level2User = l2Stmt.getAsObject();
+                }
+                l2Stmt.free();
 
-            db.run(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`, [req.session.username, actionType, userShare]);
-
-            if (user.referredBy) {
-                db.get(`SELECT username, balance, referredBy FROM users WHERE referralCode = ?`, [user.referredBy], (err, level1User) => {
-                    if (level1User) {
-                        const newL1Balance = Number((level1User.balance + level1Share).toFixed(2));
-                        db.run(`UPDATE users SET balance = ? WHERE username = ?`, [newL1Balance, level1User.username]);
-
-                        if (level1User.referredBy) {
-                            db.get(`SELECT username, balance FROM users WHERE referralCode = ?`, [level1User.referredBy], (err, level2User) => {
-                                if (level2User) {
-                                    const newL2Balance = Number((level2User.balance + level2Share).toFixed(2));
-                                    db.run(`UPDATE users SET balance = ? WHERE username = ?`, [newL2Balance, level2User.username]);
-                                }
-                            });
-                        }
-                    }
-                });
+                if (level2User) {
+                    const newL2Balance = Number((level2User.balance + level2Share).toFixed(2));
+                    db.run(`UPDATE users SET balance = ? WHERE username = ?`, [newL2Balance, level2User.username]);
+                }
             }
+        }
+    }
 
-            res.json({
-                success: true,
-                newBalance: newBalance,
-                message: `${configs[actionType].message} Získáváš ${userShare} Kč.`
-            });
-        });
+    saveDatabase();
+
+    res.json({
+        success: true,
+        newBalance: newBalance,
+        message: `${configs[actionType].message} Získáváš ${userShare} Kč.`
     });
 });
 
@@ -551,7 +642,6 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, error: 'Nastala neošetřená chyba na serveru.' });
 });
 
-// Správné nastavení spuštění pro Railway na '0.0.0.0'
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`NeonPayPulse server úspěšně běží na adrese: http://0.0.0.0:${PORT}`);
 });
