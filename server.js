@@ -554,5 +554,4 @@ app.use((err, req, res, next) => {
 // Správné nastavení spuštění pro Railway na '0.0.0.0'
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`NeonPayPulse server úspěšně běží na adrese: http://0.0.0.0:${PORT}`);
-}); 
- 
+});
