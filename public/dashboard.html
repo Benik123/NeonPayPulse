@@ -992,11 +992,10 @@
 
             </div>
 
-            <!-- PRAVÝ SLOUPCOVÝ PANEL: Aktivita komunity (S možností skrytí) -->
+            <!-- PRAVÝ SLOUPCOVÝ PANEL: Aktivita komunity -->
             <div id="live-sidebar-column" class="xl:col-span-1 transition-all duration-300">
                 <div id="live-panel-container" class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl h-[calc(100vh-5rem)] flex flex-col sticky top-10 transition-all duration-300 overflow-hidden">
                     
-                    <!-- Záhlaví s tlačítkem pro skrytí -->
                     <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
                         <div class="flex items-center space-x-2" id="live-header-title">
                             <h3 class="font-heading font-bold text-sm text-white">Aktivita komunity</h3>
@@ -1008,14 +1007,12 @@
                         
                         <div class="flex items-center space-x-2">
                             <span id="live-status-text" class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Aktivní</span>
-                            <!-- Tlačítko pro schování uvnitř panelu -->
                             <button onclick="toggleLiveFeed()" title="Schovat panel" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl flex items-center justify-center text-xs transition cursor-pointer">
                                 ◀
                             </button>
                         </div>
                     </div>
 
-                    <!-- Samotný obsah feedu -->
                     <div id="live-feed" class="flex-grow overflow-y-auto space-y-3 pr-1 scrollbar-thin">
                         <div class="notif-item bg-slate-950/70 border border-slate-800/60 p-3.5 rounded-2xl space-y-1">
                             <div class="flex justify-between items-center text-[10px]">
@@ -1028,7 +1025,7 @@
                 </div>
             </div>
 
-            <!-- Plovoucí tlačítko pro opětovné otevření feedu, když je schovaný -->
+            <!-- Plovoucí tlačítko pro opětovné otevření feedu -->
             <button onclick="toggleLiveFeed()" id="floating-open-btn" title="Zobrazit aktivitu komunity" class="fixed right-6 top-32 z-30 card-box bg-slate-900/90 border border-slate-700/80 text-slate-300 hover:text-white px-3.5 py-3 rounded-2xl shadow-2xl transition-all hidden items-center justify-center text-xs cursor-pointer backdrop-blur-md hover:border-emerald-500/50">
                 ◀ Zobrazit aktivitu
             </button>
@@ -1315,8 +1312,23 @@
                 alert('Pro smazání účtu je nutné zadat heslo.');
                 return;
             }
-            alert('Účet byl odeslán ke trvalému smazání.');
-            window.location.href = '/login.html';
+            try {
+                const response = await fetch('/api/delete-account', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ password })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('Účet byl úspěšně smazán.');
+                    window.location.href = '/login.html';
+                } else {
+                    alert(data.error || 'Chyba při mazání účtu.');
+                }
+            } catch (err) {
+                alert('Chyba připojení k serveru.');
+            }
         }
 
         function updateBalanceDisplay(newTotalCoins) {
@@ -1431,8 +1443,23 @@
                     updateBannerPreview();
                 }
                 loadLogs();
+                loadReferralStats();
             } catch (err) {
                 console.error('Chyba při načítání dat:', err);
+            }
+        }
+
+        async function loadReferralStats() {
+            try {
+                const response = await fetch('/api/referral-stats', { credentials: 'include' });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('l1-count').innerText = data.l1Count;
+                    document.getElementById('l2-count').innerText = data.l2Count;
+                    document.getElementById('total-count').innerText = data.totalReferred;
+                }
+            } catch (err) {
+                console.error('Chyba při načítání referral statistik:', err);
             }
         }
 
@@ -1472,23 +1499,27 @@
         }
 
         async function doAction(actionType) {
-            const response = await fetch('/api/earn', {
+            let endpoint = '/api/earn';
+            let payload = { actionType };
+
+            if (actionType.startsWith('buy-vip')) {
+                endpoint = '/api/buy-vip';
+            }
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({ actionType })
+                body: JSON.stringify(payload)
             });
             const data = await response.json();
             if (data.success) {
-                let newCoinsTotal = data.newBalance * 100;
-                updateBalanceDisplay(newCoinsTotal);
-                
-                let earnedNow = actionType === 'survey' ? 2000 : (actionType === 'task-game' ? 50000 : (actionType === 'task-reg' ? 15000 : 100));
-                todayEarnedCoins += earnedNow;
-                document.getElementById('today-display').innerText = todayEarnedCoins.toLocaleString();
-
-                alert(data.message);
-                loadLogs(); 
+                if (data.newBalance !== undefined) {
+                    let newCoinsTotal = data.newBalance * 100;
+                    updateBalanceDisplay(newCoinsTotal);
+                }
+                alert(data.message || 'Akce proběhla úspěšně!');
+                loadUserData(); 
             } else {
                 alert(data.error || 'Nastala chyba.');
             }
@@ -1508,7 +1539,7 @@
 
         async function logoutUser() {
             try {
-                await fetch('/api/logout', { method: 'POST' });
+                await fetch('/api/logout', { method: 'POST', credentials: 'include' });
             } catch (err) {
                 console.warn('Backend není dostupný:', err);
             }
