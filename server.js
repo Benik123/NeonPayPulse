@@ -28,10 +28,6 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) === -1 && !origin.endsWith('.up.railway.app')) {
-            return callback(null, true);
-        }
         return callback(null, true);
     },
     credentials: true
@@ -139,7 +135,6 @@ const csrfProtection = (req, res, next) => {
 
 app.use(csrfProtection);
 
-// Testovací endpoint pro ověření funkčnosti serveru
 app.get('/ping', (req, res) => {
     res.send('PONG - Server žije!');
 });
@@ -590,8 +585,10 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, error: 'Nastala neošetřená chyba na serveru.' });
 });
 
-// Inicializace databáze a spuštění serveru až PO jejím načtení
-initSqlJs().then(SQL => {
+// Správná inicializace sql.js s lokací wasm souboru pro Railway
+initSqlJs({
+    locateFile: file => path.join(__dirname, 'node_modules', 'sql.js', 'dist', file)
+}).then(SQL => {
     try {
         const buffer = fs.existsSync(dbFile) ? fs.readFileSync(dbFile) : null;
         db = new SQL.Database(buffer);
@@ -638,7 +635,6 @@ initSqlJs().then(SQL => {
         )`);
         saveDatabase();
 
-        // Spustíme Express až teď, když je databáze připravená
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`NeonPayPulse server úspěšně běží na adrese: http://0.0.0.0:${PORT}`);
         });
@@ -646,4 +642,6 @@ initSqlJs().then(SQL => {
     } catch (err) {
         console.error('Chyba při inicializaci databáze:', err.message);
     }
+}).catch(err => {
+    console.error('Chyba při načítání sql.js wasm:', err);
 });
