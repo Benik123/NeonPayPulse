@@ -115,57 +115,6 @@ function saveDatabase() {
     }
 }
 
-initSqlJs().then(SQL => {
-    try {
-        const buffer = fs.existsSync(dbFile) ? fs.readFileSync(dbFile) : null;
-        db = new SQL.Database(buffer);
-        console.log('Připojeno k SQLite databázi (sql.js).');
-
-        db.run(`CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            email TEXT UNIQUE,
-            password TEXT,
-            balance REAL DEFAULT 0.00,
-            hasBooster INTEGER DEFAULT 0,
-            referralCode TEXT,
-            referredBy TEXT,
-            lastDailyDate TEXT,
-            lastClickAd INTEGER DEFAULT 0,
-            lastVideo INTEGER DEFAULT 0,
-            lastSurvey INTEGER DEFAULT 0,
-            lastIp TEXT,
-            failedLoginAttempts INTEGER DEFAULT 0,
-            lockUntil DATETIME DEFAULT NULL
-        )`);
-
-        db.run(`CREATE TABLE IF NOT EXISTS logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT,
-            action TEXT,
-            amount REAL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
-
-        db.run(`CREATE TABLE IF NOT EXISTS password_resets (
-            email TEXT,
-            token TEXT,
-            expiresAt DATETIME
-        )`);
-
-        db.run(`CREATE TABLE IF NOT EXISTS security_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ip TEXT,
-            event TEXT,
-            details TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
-        saveDatabase();
-    } catch (err) {
-        console.error('Chyba při inicializaci databáze:', err.message);
-    }
-});
-
 const csrfProtection = (req, res, next) => {
     if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
         return next();
@@ -642,6 +591,60 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, error: 'Nastala neošetřená chyba na serveru.' });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`NeonPayPulse server úspěšně běží na adrese: http://0.0.0.0:${PORT}`);
+// Inicializace databáze a spuštění serveru až PO jejím načtení
+initSqlJs().then(SQL => {
+    try {
+        const buffer = fs.existsSync(dbFile) ? fs.readFileSync(dbFile) : null;
+        db = new SQL.Database(buffer);
+        console.log('Připojeno k SQLite databázi (sql.js).');
+
+        db.run(`CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            email TEXT UNIQUE,
+            password TEXT,
+            balance REAL DEFAULT 0.00,
+            hasBooster INTEGER DEFAULT 0,
+            referralCode TEXT,
+            referredBy TEXT,
+            lastDailyDate TEXT,
+            lastClickAd INTEGER DEFAULT 0,
+            lastVideo INTEGER DEFAULT 0,
+            lastSurvey INTEGER DEFAULT 0,
+            lastIp TEXT,
+            failedLoginAttempts INTEGER DEFAULT 0,
+            lockUntil DATETIME DEFAULT NULL
+        )`);
+
+        db.run(`CREATE TABLE IF NOT EXISTS logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            action TEXT,
+            amount REAL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+
+        db.run(`CREATE TABLE IF NOT EXISTS password_resets (
+            email TEXT,
+            token TEXT,
+            expiresAt DATETIME
+        )`);
+
+        db.run(`CREATE TABLE IF NOT EXISTS security_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip TEXT,
+            event TEXT,
+            details TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+        saveDatabase();
+
+        // Spustíme Express až teď, když je databáze připravená
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`NeonPayPulse server úspěšně běží na adrese: http://0.0.0.0:${PORT}`);
+        });
+
+    } catch (err) {
+        console.error('Chyba při inicializaci databáze:', err.message);
+    }
 });
