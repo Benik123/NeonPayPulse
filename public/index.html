@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="cs" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeonPayPulse | Vydělávejte online bez vkladu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-heading { font-family: 'Outfit', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#030712] text-slate-100 min-h-screen selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden">
+
+    <!-- Horní lišta (Header) -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-slate-950/70 border-b border-slate-800/80 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <!-- Logo -->
+            <div class="flex items-center space-x-3 group cursor-pointer">
+                <div class="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 via-emerald-400 to-teal-300 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                    <span class="text-slate-950 font-black text-2xl tracking-tighter">N</span>
+                    <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-cyan-400 rounded-full border-2 border-slate-950 flex items-center justify-center text-[9px] text-slate-950 font-black">✓</div>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-heading font-black text-2xl tracking-tight text-white leading-none">
+                        Neon<span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">PayPulse</span>
+                    </span>
+                    <span class="text-[9px] tracking-widest text-slate-400 font-bold uppercase mt-0.5">Odměny bez vkladu</span>
+                </div>
+            </div>
+
+            <!-- Rychlé tlačítka -->
+            <div class="flex items-center space-x-4">
+                <a href="login.html" class="text-xs sm:text-sm font-bold text-slate-300 hover:text-white transition px-4 py-2.5">
+                    Přihlásit se
+                </a>
+                <a href="register.html" class="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-heading font-extrabold text-xs sm:text-sm px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 transition transform hover:-translate-y-0.5">
+                    Začít zdarma ➔
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hlavní Hero sekce -->
+    <section class="relative pt-32 pb-20 lg:pt-44 lg:pb-32 px-6 overflow-hidden">
+        <!-- Zářící pozadí -->
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/10 blur-[150px] rounded-full pointer-events-none"></div>
+        <div class="absolute top-1/3 right-10 w-[400px] h-[400px] bg-cyan-500/10 blur-[130px] rounded-full pointer-events-none"></div>
+
+        <div class="max-w-5xl mx-auto text-center space-y-8 relative z-10">
+            
+            <!-- Horní banner -->
+            <div class="inline-flex items-center space-x-2 bg-slate-900/90 text-emerald-400 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold border border-emerald-500/40 shadow-md">
+                <span class="text-base">🎮</span>
+                <span>Hrajte hry, plňte úkoly a získejte až 500 Kč za jediný úkol!</span>
+            </div>
+
+            <h1 class="text-4xl sm:text-6xl lg:text-7xl font-heading font-black text-white tracking-tight leading-none">
+                Proměňte svůj čas v <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">reálné peníze</span>. 100% bez vkladu.
+            </h1>
+
+            <p class="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed">
+                Neztrácejte čas na podvodných stránkách. Za plnění speciálních úkolů, dosažení milníků nebo sledování reklam na vás čekají masivní odměny. Vše 100% zdarma.
+
+🚀 Chceš vydělávat opravdu velké peníze jako ti nejlepší?
+Své úsilí můžeš posunout na úplně jinou úroveň! Jakékoliv propagování tvého osobního odkazu je plně povoleno a vítáno. Přiveď své známé, kamarády, rodinu nebo klidně zakládej YouTube kanály, Instagramové účty, TikToky a Facebookové skupiny. Přesně takto budují své impérium a pasivní příjem ti největší hráči na světě – přivedou lidi pod sebe a pak už jen sledují, jak síť vydělává za ně. Sdílej, buduj komunitu a vydělávej bez hranic!
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                <a href="register.html" class="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-heading font-black text-base px-8 py-4 rounded-2xl shadow-xl shadow-emerald-500/25 transition transform hover:-translate-y-1">
+                    Vytvořit účet zdarma
+                </a>
+                <a href="#jak-to-funguje" class="w-full sm:w-auto bg-slate-900/80 hover:bg-slate-800 text-slate-200 font-heading font-bold text-base px-8 py-4 rounded-2xl border border-slate-800 transition">
+                    Zjistit, jak to funguje ↓
+                </a>
+            </div>
+
+            <!-- Rychlé statistiky -->
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-6 pt-16 max-w-3xl mx-auto border-t border-slate-800/80">
+                <div class="space-y-1">
+                    <p class="text-3xl font-heading font-black text-white">100%</p>
+                    <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">ZDARMA bez poplatků</p>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-3xl font-heading font-black text-emerald-400">200 Kč</p>
+                    <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Minimální výplata</p>
+                </div>
+                <div class="col-span-2 md:col-span-1 space-y-1">
+                    <p class="text-3xl font-heading font-black text-cyan-400">24/7</p>
+                    <p class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Podpora a výplaty</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sekce: Proč inzerenti platí nám a nám lidem? -->
+    <section id="jak-to-funguje" class="py-20 px-6 bg-slate-950/50 border-y border-slate-800/60">
+        <div class="max-w-7xl mx-auto space-y-16">
+            <div class="text-center space-y-4 max-w-2xl mx-auto">
+                <h2 class="text-3xl sm:text-4xl font-heading font-black text-white">Proč vám můžeme platit za nic?</h2>
+                <p class="text-sm text-slate-400 leading-relaxed">
+                    Tajemství je jednoduché. Velké firmy a vývojáři hledají lidi, kteří budou sledovat jejich reklamy, hrát nové hry nebo vyplňovat průzkumy.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Krok 1 -->
+                <div class="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl space-y-4 relative overflow-hidden group hover:border-emerald-500/40 transition">
+                    <div class="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center text-2xl font-bold border border-emerald-500/20">
+                        1
+                    </div>
+                    <h3 class="text-xl font-heading font-bold text-white">Inzerenti platí nám</h3>
+                    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                        Firmy a tvůrci aplikací investují miliony do marketingových kampaní, aby dostali své produkty mezi lidi. Tyto peníze putují na náš účet.
+                    </p>
+                </div>
+
+                <!-- Krok 2 -->
+                <div class="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl space-y-4 relative overflow-hidden group hover:border-teal-500/40 transition">
+                    <div class="w-12 h-12 bg-teal-500/10 text-teal-400 rounded-2xl flex items-center justify-center text-2xl font-bold border border-teal-500/20">
+                        2
+                    </div>
+                    <h3 class="text-xl font-heading font-bold text-white">Vy pouze plníte jednoduché úkoly</h3>
+                    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                        Klikáte na reklamy, sledujete krátká videa, plníte herní výzvy nebo doplňujete rychlé dotazníky přímo z pohodlí domova či mobilu.
+                    </p>
+                </div>
+
+                <!-- Krok 3 -->
+                <div class="bg-slate-900/60 border border-slate-800 p-8 rounded-3xl space-y-4 relative overflow-hidden group hover:border-cyan-500/40 transition">
+                    <div class="w-12 h-12 bg-cyan-500/10 text-cyan-400 rounded-2xl flex items-center justify-center text-2xl font-bold border border-cyan-500/20">
+                        3
+                    </div>
+                    <h3 class="text-xl font-heading font-bold text-white">Dostáváte spravedlivou odměnu</h3>
+                    <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                        Zisk z reklam spravedlivě dělíme s vámi. Žádné skryté poplatky, žádné nutné vklady peněz předem. Vše co vyděláte, je vaše.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Způsoby výdělku (Grid) -->
+    <section class="py-20 px-6">
+        <div class="max-w-7xl mx-auto space-y-12">
+            <div class="text-center space-y-4 max-w-2xl mx-auto">
+                <h2 class="text-3xl sm:text-4xl font-heading font-black text-white">Všechny způsoby výdělku na jednom místě</h2>
+                <p class="text-sm text-slate-400">Vyberte si to, co vás baví nejvíc, nebo kombinujte vše pro maximální zisk.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-slate-900/40 border border-slate-800 p-6 rounded-3xl space-y-3">
+                    <div class="text-3xl">📢</div>
+                    <h4 class="font-heading font-bold text-white text-base">Klikání na reklamy</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">Navštěvujte partnerské weby a inzeráty a sbírejte okamžité odměny za každé kliknutí.</p>
+                </div>
+                <div class="bg-slate-900/40 border border-slate-800 p-6 rounded-3xl space-y-3">
+                    <div class="text-3xl">🎯</div>
+                    <h4 class="font-heading font-bold text-white text-base">Plnění herních úkolů</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">Stahujte nové mobilní hry, dosahujte zajímavých levelů a získejte masivní prémie.</p>
+                </div>
+                <div class="bg-slate-900/40 border border-slate-800 p-6 rounded-3xl space-y-3">
+                    <div class="text-3xl">📋</div>
+                    <h4 class="font-heading font-bold text-white text-base">Placené dotazníky</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">Řekněte svůj názor na moderní technologie a produkty velkých světových značek.</p>
+                </div>
+                <div class="bg-slate-900/40 border border-slate-800 p-6 rounded-3xl space-y-3">
+                    <div class="text-3xl">👥</div>
+                    <h4 class="font-heading font-bold text-white text-base">Vícestupňový Referral</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">Budujte komunitu přátel ze dvou úrovní a nechte si vyplácet pasivní provize z jejich aktivity.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Závěrečná výzva k akci (CTA) -->
+    <section class="py-20 px-6">
+        <div class="max-w-5xl mx-auto bg-gradient-to-r from-emerald-950/60 via-teal-950/40 to-slate-900 border border-emerald-500/30 p-10 sm:p-16 rounded-[2.55rem] text-center space-y-6 shadow-2xl relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 text-9xl opacity-10 select-none">⚡</div>
+            <h2 class="text-3xl sm:text-5xl font-heading font-black text-white tracking-tight">Připraveni začít vydělávat hned teď?</h2>
+            <p class="text-sm sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed">
+                Registrace trvá méně než 30 vteřin. Získejte uvítací bonus a vybudujte si vlastní zdroj pasivního příjmu ještě dnes.
+            </p>
+            <div class="pt-4">
+                <a href="register.html" class="inline-block bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-slate-950 font-heading font-black text-base px-10 py-4 rounded-2xl shadow-xl shadow-emerald-500/25 transition transform hover:-translate-y-1">
+                    Registrovat se a začít vydělávat zdarma ➔
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Patička -->
+    <footer class="border-t border-slate-800/80 py-12 px-6 bg-slate-950 text-slate-500 text-xs">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-center items-center gap-6">
+            <div class="flex items-center space-x-2">
+                <span class="font-heading font-bold text-white text-sm">Neon<span class="text-emerald-400">PayPulse</span></span>
+                <span>© 2026 Všechna práva vyhrazena.</span>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
