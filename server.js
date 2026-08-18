@@ -44,8 +44,9 @@ app.use(helmet({
     hidePoweredBy: true
 }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// OCHRANA PROTI PŘEHLCENÍ SERVERU (Limit velikosti příchozích dat na max 10kb)
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -97,6 +98,22 @@ const earnLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, error: 'Příliš mnoho požadavků. Zpomal prosím.' }
+});
+
+const payoutLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 3,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: 'Příliš mnoho žádostí o výplatu z této IP adresy.' }
+});
+
+const contactLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 3,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, error: 'Příliš mnoho zpráv z této IP adresy. Zkuste to za hodinu.' }
 });
 
 const resetLimiter = rateLimit({
@@ -173,6 +190,28 @@ app.get('/api/admin/security-logs', (req, res) => {
     res.json({ success: true, logs });
 });
 
+// ZABEZPEČENÝ ENDPOINT PRO KONTAKTNÍ FORMULÁŘ
+app.post('/api/contact', contactLimiter, [
+    body('name').trim().escape().notEmpty().withMessage('Chybí jméno.'),
+    body('email').isEmail().normalizeEmail().withMessage('Neplatný e-mail.'),
+    body('message').trim().escape().isLength({ min: 10, max: 1000 }).withMessage('Zpráva musí mít 10 až 1000 znaků.')
+], (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.json({ success: false, error: errors.array()[0].msg });
+    }
+
+    const { name, email, message } = req.body;
+    const clientIp = req.ip || 'unknown';
+
+    db.prepare(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`).run(
+        clientIp, 'CONTACT_FORM', `Message from ${email} (${name})`
+    );
+    saveDatabase();
+
+    res.json({ success: true, message: 'Děkujeme! Vaše zpráva byla úspěšně odeslána týmu podpoře.' });
+});
+
 app.post('/api/delete-account', sensitiveActionLimiter, async (req, res) => {
     if (!req.session.username) return res.status(401).json({ success: false, error: 'Nepřihlášen' });
     const { password } = req.body;
@@ -212,7 +251,6 @@ app.post('/api/register', registerLimiter, [
         return res.status(403).json({ success: false, error: 'Detekován bot.' });
     }
 
-    // Ochrana proti multi-accounting: Kontrola, kolik účtů už je z této IP adresy (max 3 účty)
     const ipCheck = db.prepare(`SELECT COUNT(*) as count FROM users WHERE lastIp = ?`).get(clientIp);
     if (ipCheck && ipCheck.count >= 3) {
         db.prepare(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`).run(clientIp, 'MULTI_ACCOUNT_BLOCK', `Too many accounts from IP: ${clientIp}`);
@@ -307,7 +345,6 @@ app.post('/api/request-password-reset', resetLimiter, [
     }
 
     const { email } = req.body;
-    
     const user = db.prepare(`SELECT username FROM users WHERE email = ?`).get(email);
 
     if (!user) {
@@ -336,7 +373,6 @@ app.post('/api/reset-password', [
     }
 
     const { token, newPassword } = req.body;
-
     const row = db.prepare(`SELECT * FROM password_resets WHERE token = ? AND expiresAt > ?`).get(token, new Date().toISOString());
 
     if (!row) {
@@ -385,37 +421,97 @@ app.get('/api/user', (req, res) => {
     });
 });
 
+// ZABEZPEČENÝ ENDPOINT PRO NÁKUP VIP
 app.post('/api/buy-vip', earnLimiter, (req, res) => {
     if (!req.session.username) return res.status(401).json({ success: false, error: 'Nepřihlášen' });
 
-    const vipPrice = 200.00;
+    const { actionType } = req.body;
 
-    const user = db.prepare(`SELECT balance, hasBooster FROM users WHERE username = ?`).get(req.session.username);
+    const vipPrices = {
+        'buy-vip-bronze': 89.00,
+        'buy-vip-silver': 189.00,
+        'buy-vip-gold': 289.00,
+        'buy-vip': 200.00
+    };
 
-    if (!user) return res.json({ success: false, error: 'Uživatel nenalezen.' });
-
-    if (user.hasBooster === 1) {
-        return res.json({ success: false, error: 'VIP balíček již máš aktivní!' });
-    }
-
-    if (user.balance < vipPrice) {
-        return res.json({ success: false, error: `Nemáš dostatek peněz. VIP stojí ${vipPrice} Kč, tvůj zůstatek je ${user.balance} Kč.` });
-    }
-
-    const newBalance = Number((user.balance - vipPrice).toFixed(2));
+    const vipPrice = vipPrices[actionType] || 200.00;
 
     const buyVipTx = db.transaction(() => {
+        const user = db.prepare(`SELECT balance, hasBooster FROM users WHERE username = ?`).get(req.session.username);
+
+        if (!user) throw new Error('Uživatel nenalezen.');
+        if (user.hasBooster === 1) throw new Error('VIP balíček již máš aktivní!');
+        if (user.balance < vipPrice) throw new Error(`Nemáš dostatek peněz. VIP stojí ${vipPrice} Kč, tvůj zůstatek je ${user.balance} Kč.`);
+
+        const newBalance = Number((user.balance - vipPrice).toFixed(2));
+
         db.prepare(`UPDATE users SET balance = ?, hasBooster = 1 WHERE username = ?`).run(newBalance, req.session.username);
         db.prepare(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`).run(req.session.username, 'nákup-vip', -vipPrice);
+        
+        return newBalance;
     });
-    buyVipTx();
-    
-    saveDatabase();
-    res.json({
-        success: true,
-        newBalance: newBalance,
-        message: 'Gratuluji! VIP balíček byl úspěšně aktivován.'
+
+    try {
+        const newBalance = buyVipTx();
+        saveDatabase();
+        res.json({
+            success: true,
+            newBalance: newBalance,
+            message: 'Gratuluji! VIP balíček byl úspěšně aktivován.'
+        });
+    } catch (err) {
+        res.json({ success: false, error: err.message });
+    }
+});
+
+// BEZPEČNÝ ENDPOINT PRO ŽÁDOST O VÝPLATU
+app.post('/api/request-payout', payoutLimiter, [
+    body('method').notEmpty().withMessage('Chybí platební metoda.'),
+    body('details').notEmpty().withMessage('Chybí platební údaje.')
+], (req, res) => {
+    if (!req.session.username) return res.status(401).json({ success: false, error: 'Nepřihlášen' });
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.json({ success: false, error: errors.array()[0].msg });
+    }
+
+    const { method, details } = req.body;
+    const minPayoutCzk = 200.00;
+
+    const requestPayoutTx = db.transaction(() => {
+        const user = db.prepare(`SELECT balance FROM users WHERE username = ?`).get(req.session.username);
+
+        if (!user) throw new Error('Uživatel nenalezen.');
+        if (user.balance < minPayoutCzk) throw new Error(`Minimální částka pro výplatu je 200 Kč. Tvůj zůstatek je ${user.balance.toFixed(2)} Kč.`);
+
+        const payoutAmount = Number(user.balance.toFixed(2));
+        const newBalance = 0.00;
+
+        db.prepare(`UPDATE users SET balance = ? WHERE username = ?`).run(newBalance, req.session.username);
+
+        db.prepare(`INSERT INTO payouts (username, amount, method, details, status) VALUES (?, ?, ?, ?, 'pending')`).run(
+            req.session.username, payoutAmount, method, details
+        );
+
+        db.prepare(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`).run(
+            req.session.username, 'vyplata-zadost', -payoutAmount
+        );
+
+        return newBalance;
     });
+
+    try {
+        const newBalance = requestPayoutTx();
+        saveDatabase();
+        res.json({
+            success: true,
+            newBalance: newBalance,
+            message: 'Žádost o výplatu byla úspěšně odeslána k ručnímu auditu!'
+        });
+    } catch (err) {
+        res.json({ success: false, error: err.message });
+    }
 });
 
 app.get('/api/referral-stats', (req, res) => {
@@ -487,7 +583,14 @@ app.post('/api/earn', earnLimiter, (req, res) => {
         'click-ad': { reward: 1.00, cooldown: 3, message: 'Odměna za reklamu byla přičtena!', col: 'lastClickAd' },
         'video': { reward: 2.00, cooldown: 10, message: 'Sledování videa dokončeno!', col: 'lastVideo' },
         'survey': { reward: 20.00, cooldown: 60, message: 'Úspěšně vyplněný dotazník!', col: 'lastSurvey' },
-        'daily-bonus': { reward: 5.00, cooldown: 0, message: 'Denní bonus vyzvednut!', col: 'lastDailyDate' }
+        'daily-bonus': { reward: 5.00, cooldown: 0, message: 'Denní bonus vyzvednut!', col: 'lastDailyDate' },
+        'task-game-1': { reward: 500.00, cooldown: 300, message: 'Testování hry ověřeno a odměna přičtena!', col: 'lastGameTask' },
+        'task-game': { reward: 500.00, cooldown: 300, message: 'Testování hry ověřeno a odměna přičtena!', col: 'lastGameTask' },
+        'task-web-1': { reward: 100.00, cooldown: 120, message: 'Zpětná vazba na web úspěšně odeslána!', col: 'lastWebTask' },
+        'task-reg-1': { reward: 150.00, cooldown: 120, message: 'Partnerská registrace ověřena!', col: 'lastRegTask' },
+        'task-reg': { reward: 150.00, cooldown: 120, message: 'Partnerská registrace ověřena!', col: 'lastRegTask' },
+        'task-review-1': { reward: 50.00, cooldown: 60, message: 'Recenze schválena a odměněna!', col: 'lastReviewTask' },
+        'task-social-1': { reward: 3.00, cooldown: 5, message: 'Mikroúkol na sociální síti splněn!', col: 'lastSocialTask' }
     };
 
     if (!configs[actionType]) {
@@ -591,6 +694,11 @@ try {
             lastClickAd INTEGER DEFAULT 0,
             lastVideo INTEGER DEFAULT 0,
             lastSurvey INTEGER DEFAULT 0,
+            lastGameTask INTEGER DEFAULT 0,
+            lastWebTask INTEGER DEFAULT 0,
+            lastRegTask INTEGER DEFAULT 0,
+            lastReviewTask INTEGER DEFAULT 0,
+            lastSocialTask INTEGER DEFAULT 0,
             lastIp TEXT,
             failedLoginAttempts INTEGER DEFAULT 0,
             lockUntil DATETIME DEFAULT NULL
@@ -601,6 +709,16 @@ try {
             username TEXT,
             action TEXT,
             amount REAL,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS payouts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            amount REAL,
+            method TEXT,
+            details TEXT,
+            status TEXT DEFAULT 'pending',
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
