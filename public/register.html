@@ -34,7 +34,8 @@
                 <p class="text-xs text-slate-400">Zaregistruj se a začni budovat své portfolio.</p>
             </div>
 
-            <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-4">
+            <!-- Formulář BEZ onsubmit atributu -->
+            <form id="registerForm" class="space-y-4">
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-300">Uživatelské jméno</label>
                     <input type="text" id="username" required class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition">
@@ -49,9 +50,18 @@
                     <label class="text-xs font-bold text-slate-300">Heslo</label>
                     <input type="password" id="password" required class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition">
                 </div>
+                
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-300">Referral kód (nepovinné)</label>
                     <input type="text" id="refCode" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition" placeholder="Např. jmeno1234">
+                </div>
+
+                <!-- POVINNÝ SOUHLAS S OBCHODNÍMI PODMÍNKAMI -->
+                <div class="flex items-start space-x-3 pt-2">
+                    <input type="checkbox" id="terms" required class="mt-1 w-4 h-4 rounded bg-slate-950 border-slate-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900 cursor-pointer">
+                    <label for="terms" class="text-xs text-slate-400 leading-relaxed">
+                        Souhlasím s <a href="/terms.html" target="_blank" class="text-emerald-400 font-bold hover:underline">obchodními podmínkami</a> a pravidly používání služby.
+                    </label>
                 </div>
 
                 <!-- NEVIDITELNÁ PAST NA BOTY (Honeypot) -->
@@ -73,16 +83,37 @@
         </div>
     </main>
 
-    <footer class="border-t border-slate-800/80 bg-slate-950/50 py-6 text-center text-xs text-slate-500">
+    <footer class="border-t border-slate-800/80 bg-slate-950/50 py-6 text-center text-xs text-slate-500 space-y-2">
+        <p>
+            <a href="/terms.html" class="hover:text-slate-300 underline">Obchodní podmínky</a>
+        </p>
         <p>&copy; 2026 NeonPayPulse Ecosystem.</p>
     </footer>
 
     <script>
-        window.addEventListener('DOMContentLoaded', () => {
+        let csrfToken = '';
+
+        window.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const refParam = urlParams.get('ref');
             if (refParam) {
                 document.getElementById('refCode').value = refParam;
+            }
+
+            try {
+                const res = await fetch('/api/csrf-token', { credentials: 'include' });
+                const data = await res.json();
+                if (data.success) {
+                    csrfToken = data.csrfToken;
+                }
+            } catch (err) {
+                console.error('Nepodařilo se načíst CSRF token');
+            }
+
+            // BEZPEČNÉ NAVÁZÁNÍ ODESÍLÁNÍ FORMULÁŘE (místo onsubmit v HTML)
+            const form = document.getElementById('registerForm');
+            if (form) {
+                form.addEventListener('submit', handleRegister);
             }
         });
 
@@ -92,7 +123,7 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const refCode = document.getElementById('refCode').value;
-            const website = document.getElementById('website').value;
+            const website = document.getElementById('website'].value;
             const errorMsg = document.getElementById('error-msg');
 
             errorMsg.classList.add('hidden');
@@ -101,8 +132,11 @@
             try {
                 const res = await fetch('/api/register', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include', // DŮLEŽITÉ PRO ULOŽENÍ SESSION
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-csrf-token': csrfToken
+                    },
+                    credentials: 'include',
                     body: JSON.stringify({ username, email, password, refCode, website })
                 });
                 const data = await res.json();
