@@ -187,7 +187,7 @@ app.get('/api/admin/security-logs', (req, res) => {
 
     db.all(`SELECT * FROM security_logs ORDER BY id DESC LIMIT 50`, [], (err, logs) => {
         if (err) return res.status(500).json({ success: false, error: 'Chyba databáze' });
-        res.json({ success: true, logs });
+        res.json({ success: true, logs: logs || [] });
     });
 });
 
