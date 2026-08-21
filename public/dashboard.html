@@ -14,16 +14,7 @@
         @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .notif-item { animation: slideIn 0.3s ease-out; }
 
-        /* NEKOMPROMISNÍ CSS PRAVIDLO: Když nejsme na úvodní stránce (home), pravý panel zmizí a obsah se roztáhne na celou obrazovku */
-        #main-grid-layout:not(:has(#section-home.active)) {
-            grid-template-columns: 1fr !important;
-        }
-        #main-grid-layout:not(:has(#section-home.active)) #main-content-column {
-            grid-column: span 3 / span 3 !important;
-        }
-        #main-grid-layout:not(:has(#section-home.active)) #live-sidebar-column {
-            display: none !important;
-        }
+        
 
         .light-mode { background-color: #e2e8f0 !important; color: #0f172a !important; }
         .light-mode main { background-color: #f1f5f9 !important; }
@@ -65,6 +56,9 @@
                 <a onclick="switchSection('home')" id="nav-home" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 active">
                     <span>🏠</span> <span>Přehled</span>
                 </a>
+                <a onclick="switchSection('statistics')" id="nav-statistics" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-900">
+                    <span>📊</span> <span>Statistiky účtu</span>
+                </a>
 
                 <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 pt-4 pb-2">Způsoby výdělku</div>
                 
@@ -94,19 +88,19 @@
                     <span>📋</span> <span>Dotazníky</span>
                 </a>
                 <a onclick="switchSection('videos')" id="nav-videos" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-900">
-                    <span>🎬</span> <span>Sledování videí</span>
-                </a>
-                <a onclick="switchSection('bonus')" id="nav-bonus" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-900">
-                    <span>🎁</span> <span>Denní úkoly</span>
-                </a>
+    <span>🎬</span> <span>Sledování videí</span>
+</a>
 
-                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 pt-4 pb-2">Bonusy</div>
-                <a onclick="switchSection('referrals')" id="nav-referrals" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-900">
-                    <span>👥</span> <span>Pozvi přátele (Ref)</span>
-                </a>
-                <a onclick="switchSection('vip')" id="nav-vip" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-900">
-                    <span>👑</span> <span>VIP Balíčky</span>
-                </a>
+<div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 pt-4 pb-2">Bonusy & Komunita</div>
+<a onclick="switchSection('bonus')" id="nav-bonus" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-900">
+    <span>🎁</span> <span>Denní úkoly</span>
+</a>
+<a onclick="switchSection('referrals')" id="nav-referrals" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-900">
+    <span>👥</span> <span>Pozvi přátele (Ref)</span>
+</a>
+<a onclick="switchSection('vip')" id="nav-vip" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-900">
+    <span>👑</span> <span>VIP Balíčky</span>
+</a>
 
                 <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 pt-4 pb-2">Finance a účet</div>
                 <a onclick="switchSection('payouts')" id="nav-payouts" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-900">
@@ -139,154 +133,220 @@
 
     <!-- Hlavní obsah -->
     <main class="flex-grow ml-72 p-10 min-h-screen overflow-y-auto">
-        <div class="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-3 gap-8" id="main-grid-layout">
+        <div class="max-w-5xl mx-auto space-y-6">
 
-            <!-- LEVÉ SLOUPCE: Samotný obsah -->
-            <div id="main-content-column" class="xl:col-span-2 space-y-6 transition-all duration-300">
+            <!-- Přehled -->
+            <div id="section-home" class="section active space-y-6">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-3xl font-heading font-black text-white">Vítej, <span id="username-display" class="text-emerald-400">načítám...</span>! 👋</h1>
+                </div>
 
-                <!-- Přehled -->
-                <div id="section-home" class="section active space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h1 class="text-3xl font-heading font-black text-white">Vítej, <span id="username-display" class="text-emerald-400">načítám...</span>! 👋</h1>
-                    </div>
-
-                    <div class="card-box bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-slate-900/60 border border-emerald-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-2xl relative overflow-hidden">
-                        <div class="absolute -right-6 -bottom-6 text-8xl opacity-10 select-none">🪙</div>
-                        <div class="space-y-3 relative z-10">
-                            <div class="inline-flex items-center space-x-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-xl text-xs font-bold border border-emerald-500/30">
-                                <span>💡 Jak to funguje a jak vydělávat maximum?</span>
-                            </div>
-                            <div class="text-xs text-slate-300 leading-relaxed space-y-3">
-                                <p class="text-emerald-400 font-semibold text-sm">Vítejte v nejvýdělečnějším systému bez nutnosti jakéhokoliv vstupního vkladu! S námi peníze pouze vyděláváte!</p>
-                                <p>Naše platforma propojuje obrovské světové firmy a vývojáře, kteří nutně potřebují testovat své aplikace, hry, weby a služby před ostrým spuštěním. A protože za to utrácí obrovské marketingové rozpočty, <strong>velkou část těchto peněz posíláme přímo vám!</strong></p>
-                                
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                                    <div class="bg-slate-950/50 p-3.5 rounded-2xl border border-slate-800 space-y-1">
-                                        <strong class="text-white text-xs block">🔥 Obří odměny za jediné testování</strong>
-                                        <p class="text-[11px] text-slate-400">Za pouhé otestování mobilní hry nebo dokončení pokročilého úkolu můžete získat <strong>odměny v hodnotě stovek korun</strong> (až desítky tisíc coinů) za jediné odpoledne!</p>
-                                    </div>
-                                    <div class="bg-slate-950/50 p-3.5 rounded-2xl border border-slate-800 space-y-1">
-                                        <strong class="text-white text-xs block">👥 Budujte impérium a berte masivní peníze</strong>
-                                        <p class="text-[11px] text-slate-400">Největší síla nespočívá jen v klikání, ale v budování sítě. Každý člověk, kterého pozvete, vám generuje <strong>trvalé provize z jeho výdělků</strong> – a dokonce berete provize i z lidí, které pozvou oni!</p>
-                                    </div>
-                                </div>
-
-                                <ul class="list-disc pl-4 space-y-1.5 pt-1">
-                                    <li><strong>1. Vyberte si libovolnou sekci v levém menu:</strong> Testujte špičkové hry, zkoušejte nové webové portály, pište recenze nebo plňte rychlé mikroúkoly.</li>
-                                    <li><strong>2. Doporučujte přátele (Referral systém):</strong> Sdílejte svůj unikátní odkaz. Čím aktivnější lidi pod sebou máte, tím větší pasivní denní příjem vám na účet přitéká.</li>
-                                    <li><strong>3. Rychlé a bezpečné výplaty:</strong> Jakmile nasbíráte minimálně 200 Kč, peníze si můžete okamžitě vyžádat na svůj PayPal, bankovní účet nebo kartu!</li>
-                                </ul>
-                            </div>
-                            <div class="pt-2">
-                                <button onclick="switchSection('games')" class="inline-block px-5 py-2.5 bg-emerald-500 text-slate-950 font-bold rounded-xl hover:bg-emerald-400 transition cursor-pointer text-xs">
-                                    Přejít na testování her a vydělat první stovky ➔
-                                </button>
-                            </div>
+                <div class="card-box bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-slate-900/60 border border-emerald-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-2xl relative overflow-hidden">
+                    <div class="absolute -right-6 -bottom-6 text-8xl opacity-10 select-none">🪙</div>
+                    <div class="space-y-3 relative z-10">
+                        <div class="inline-flex items-center space-x-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-xl text-xs font-bold border border-emerald-500/30">
+                            <span>💡 Jak to funguje a jak vydělávat maximum?</span>
                         </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="card-box bg-gradient-to-br from-emerald-950/30 via-slate-900/60 to-slate-900/80 border border-emerald-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3 relative overflow-hidden">
-                            <div class="absolute -right-4 -top-4 text-5xl opacity-10">💰</div>
-                            <p class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Celkový zůstatek</p>
-                            <div class="flex items-baseline space-x-2">
-                                <p class="text-3xl font-heading font-black text-white"><span id="balance-display">0</span></p>
-                                <span class="text-xs font-semibold text-emerald-400">coinů</span>
-                            </div>
-                            <div class="pt-1 border-t border-slate-800/80 flex justify-between items-center text-[11px]">
-                                <span class="text-slate-400">Reálná hodnota:</span>
-                                <span class="font-bold text-slate-200"><span id="balance-czk">0.00</span> Kč</span>
-                            </div>
-
-                            <div class="space-y-1.5 pt-2 border-t border-slate-800/60">
-                                <div class="flex justify-between text-[10px] font-semibold">
-                                    <span class="text-slate-400">Min. výplata: 200 Kč</span>
-                                    <span id="payout-progress-text" class="text-emerald-400">0 %</span>
+                        <div class="text-xs text-slate-300 leading-relaxed space-y-3">
+                            <p class="text-emerald-400 font-semibold text-sm">Vítejte v nejvýdělečnějším systému bez nutnosti jakéhokoliv vstupního vkladu! S námi peníze pouze vyděláváte!</p>
+                            <p>Naše platforma propojuje obrovské světové firmy a vývojáře, kteří nutně potřebují testovat své aplikace, hry, weby a služby před ostrým spuštěním. A protože za to utrácí obrovské marketingové rozpočty, <strong>velkou část těchto peněz posíláme přímo vám!</strong></p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                                <div class="bg-slate-950/50 p-3.5 rounded-2xl border border-slate-800 space-y-1">
+                                    <strong class="text-white text-xs block">🔥 Obří odměny za jediné testování</strong>
+                                    <p class="text-[11px] text-slate-400">Za pouhé otestování mobilní hry nebo dokončení pokročilého úkolu můžete získat <strong>odměny v hodnotě stovek korun</strong> (až desítky tisíc coinů) za jediné odpoledne!</p>
                                 </div>
-                                <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
-                                    <div id="payout-progress-bar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full w-0 transition-all duration-500"></div>
+                                <div class="bg-slate-950/50 p-3.5 rounded-2xl border border-slate-800 space-y-1">
+                                    <strong class="text-white text-xs block">👥 Budujte impérium a berte masivní peníze</strong>
+                                    <p class="text-[11px] text-slate-400">Největší síla nespočívá jen v klikání, ale v budování sítě. Každý člověk, kterého pozvete, vám generuje <strong>trvalé provize z jeho výdělků</strong> – a dokonce berete provize i z lidí, které pozvou oni!</p>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="card-box bg-gradient-to-br from-amber-950/30 via-slate-900/60 to-slate-900/80 border border-amber-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3 relative overflow-hidden">
-                            <div class="absolute -right-4 -top-4 text-5xl opacity-10">🔥</div>
-                            <p class="text-xs font-bold text-amber-400 uppercase tracking-wider">Dnes vyděláno</p>
-                            <div class="flex items-baseline space-x-2">
-                                <p class="text-3xl font-heading font-black text-amber-400">+<span id="today-display">0</span></p>
-                                <span class="text-xs font-semibold text-slate-400">coinů</span>
-                            </div>
-                            <div class="pt-1 border-t border-slate-800/80 flex justify-between items-center text-[11px]">
-                                <span class="text-slate-400">Kurz:</span>
-                                <span class="font-bold text-amber-300">100 coinů = 1 Kč</span>
-                            </div>
+                            <ul class="list-disc pl-4 space-y-1.5 pt-1">
+                                <li><strong>1. Vyberte si libovolnou sekci v levém menu:</strong> Testujte špičkové hry, zkoušejte nové webové portály, pište recenze nebo plňte rychlé mikroúkoly.</li>
+                                <li><strong>2. Doporučujte přátele (Referral systém):</strong> Sdílejte svůj unikátní odkaz. Čím aktivnější lidi pod sebou máte, tím větší pasivní denní příjem vám na účet přitéká.</li>
+                                <li><strong>3. Rychlé a bezpečné výplaty:</strong> Jakmile nasbíráte minimálně 200 Kč, peníze si můžete okamžitě vyžádat na svůj PayPal, bankovní účet nebo kartu!</li>
+                            </ul>
                         </div>
-
-                        <div class="card-box bg-gradient-to-br from-cyan-950/30 via-slate-900/60 to-slate-900/80 border border-cyan-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3 relative overflow-hidden">
-                            <div class="absolute -right-4 -top-4 text-5xl opacity-10">⚡</div>
-                            <p class="text-xs font-bold text-cyan-400 uppercase tracking-wider">Denní série</p>
-                            <div class="flex items-baseline space-x-2">
-                                <p class="text-3xl font-heading font-black text-cyan-400"><span id="streak-display">1</span></p>
-                                <span class="text-xs font-semibold text-slate-400">den v řadě</span>
-                            </div>
-                            <div class="pt-1 border-t border-slate-800/80 flex justify-between items-center text-[11px]">
-                                <span class="text-slate-400">Zítra získáš:</span>
-                                <span class="font-bold text-cyan-300" id="next-streak-reward">Větší bonus</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card-box bg-gradient-to-r from-teal-950/40 via-emerald-950/30 to-slate-900/60 border border-teal-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-4">
-                        <div class="flex items-center space-x-2">
-                            <span class="bg-teal-500/20 text-teal-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold border border-teal-500/30">👥 Sdílení a komunitní růst</span>
-                        </div>
-                        <div class="space-y-1">
-                            <h3 class="text-lg font-heading font-bold text-white">Budujte s námi komunitu a vydělávejte miliony</h3>
-                            <p class="text-xs text-slate-300 leading-relaxed">Pozvěte své přátele pomocí vašeho odkazu. Každý aktivní člověk pod vámi znamená trvalý přísun peněz do vaší kasy, a to zcela bez vašeho dalšího přičinění!</p>
-                        </div>
-                        
-                        <div class="flex flex-col sm:flex-row items-center gap-3 pt-1">
-                            <input type="text" id="home-ref-link" readonly value="Načítám odkaz..." class="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-emerald-400 font-mono focus:outline-none">
-                            <button onclick="copyHomeRefLink()" class="w-full sm:w-auto px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-heading font-bold text-xs rounded-xl transition cursor-pointer whitespace-nowrap shadow-md">
-                                Zkopírovat odkaz
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-4">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-lg font-heading font-bold text-white">Historie posledních akcí</h3>
-                        </div>
-                        
-                        <div class="overflow-x-auto">
-                            <table id="logsTable" class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="border-b border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                        <th class="py-3 px-4">Akce</th>
-                                        <th class="py-3 px-4">Coiny</th>
-                                        <th class="py-3 px-4">Čas</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="text-sm text-slate-300 divide-y divide-slate-800/50">
-                                    <tr>
-                                        <td colspan="3" class="py-4 text-center text-slate-500">Načítám historii...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="flex items-center justify-between pt-2 border-t border-slate-800/60">
-                            <button onclick="changePage(-1)" id="prev-page-btn" disabled class="px-4 py-2 bg-slate-800 text-slate-400 text-xs font-bold rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-700 hover:text-white cursor-pointer">
-                                Předchozí
-                            </button>
-                            <span id="page-indicator" class="text-xs text-slate-400 font-medium">Stránka 1</span>
-                            <button onclick="changePage(1)" id="next-page-btn" disabled class="px-4 py-2 bg-slate-800 text-slate-400 text-xs font-bold rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-700 hover:text-white cursor-pointer">
-                                Další
+                        <div class="pt-2">
+                            <button onclick="switchSection('games')" class="inline-block px-5 py-2.5 bg-emerald-500 text-slate-950 font-bold rounded-xl hover:bg-emerald-400 transition cursor-pointer text-xs">
+                                Přejít na testování her a vydělat první stovky ➔
                             </button>
                         </div>
                     </div>
                 </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="card-box bg-gradient-to-br from-emerald-950/30 via-slate-900/60 to-slate-900/80 border border-emerald-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3 relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 text-5xl opacity-10">💰</div>
+                        <p class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Celkový zůstatek</p>
+                        <div class="flex items-baseline space-x-2">
+                            <p class="text-3xl font-heading font-black text-white"><span id="balance-display">0</span></p>
+                            <span class="text-xs font-semibold text-emerald-400">coinů</span>
+                        </div>
+                        <div class="pt-1 border-t border-slate-800/80 flex justify-between items-center text-[11px]">
+                            <span class="text-slate-400">Reálná hodnota:</span>
+                            <span class="font-bold text-slate-200"><span id="balance-czk">0.00</span> Kč</span>
+                        </div>
 
+                        <div class="space-y-1.5 pt-2 border-t border-slate-800/60">
+                            <div class="flex justify-between text-[10px] font-semibold">
+                                <span class="text-slate-400">Min. výplata: 200 Kč</span>
+                                <span id="payout-progress-text" class="text-emerald-400">0 %</span>
+                            </div>
+                            <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                                <div id="payout-progress-bar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full w-0 transition-all duration-500"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-box bg-gradient-to-br from-amber-950/30 via-slate-900/60 to-slate-900/80 border border-amber-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3 relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 text-5xl opacity-10">🔥</div>
+                        <p class="text-xs font-bold text-amber-400 uppercase tracking-wider">Dnes vyděláno</p>
+                        <div class="flex items-baseline space-x-2">
+                            <p class="text-3xl font-heading font-black text-amber-400">+<span id="today-display">0</span></p>
+                            <span class="text-xs font-semibold text-slate-400">coinů</span>
+                        </div>
+                        <div class="pt-1 border-t border-slate-800/80 flex justify-between items-center text-[11px]">
+                            <span class="text-slate-400">Kurz:</span>
+                            <span class="font-bold text-amber-300">100 coinů = 1 Kč</span>
+                        </div>
+                    </div>
+
+                    <div class="card-box bg-gradient-to-br from-cyan-950/30 via-slate-900/60 to-slate-900/80 border border-cyan-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3 relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 text-5xl opacity-10">⚡</div>
+                        <p class="text-xs font-bold text-cyan-400 uppercase tracking-wider">Denní série</p>
+                        <div class="flex items-baseline space-x-2">
+                            <p class="text-3xl font-heading font-black text-cyan-400"><span id="streak-display">1</span></p>
+                            <span class="text-xs font-semibold text-slate-400">den v řadě</span>
+                        </div>
+                        <div class="pt-1 border-t border-slate-800/80 flex justify-between items-center text-[11px]">
+                            <span class="text-slate-400">Zítra získáš:</span>
+                            <span class="font-bold text-cyan-300" id="next-streak-reward">Větší bonus</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-box bg-gradient-to-r from-teal-950/40 via-emerald-950/30 to-slate-900/60 border border-teal-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-teal-500/20 text-teal-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold border border-teal-500/30">👥 Sdílení a komunitní růst</span>
+                    </div>
+                    <div class="space-y-1">
+                        <h3 class="text-lg font-heading font-bold text-white">Budujte s námi komunitu a vydělávejte miliony</h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">Pozvěte své přátele pomocí vašeho odkazu. Každý aktivní člověk pod vámi znamená trvalý přísun peněz do vaší kasy, a to zcela bez vašeho dalšího přičinění!</p>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row items-center gap-3 pt-1">
+                        <input type="text" id="home-ref-link" readonly value="Načítám odkaz..." class="w-full bg-slate-950/70 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-emerald-400 font-mono focus:outline-none">
+                        <button onclick="copyHomeRefLink()" class="w-full sm:w-auto px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-heading font-bold text-xs rounded-xl transition cursor-pointer whitespace-nowrap shadow-md">
+                            Zkopírovat odkaz
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-heading font-bold text-white">Historie posledních akcí</h3>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table id="logsTable" class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    <th class="py-3 px-4">Akce</th>
+                                    <th class="py-3 px-4">Coiny</th>
+                                    <th class="py-3 px-4">Čas</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm text-slate-300 divide-y divide-slate-800/50">
+                                <tr>
+                                    <td colspan="3" class="py-4 text-center text-slate-500">Načítám historii...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-800/60">
+                        <button onclick="changePage(-1)" id="prev-page-btn" disabled class="px-4 py-2 bg-slate-800 text-slate-400 text-xs font-bold rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-700 hover:text-white cursor-pointer">
+                            Předchozí
+                        </button>
+                        <span id="page-indicator" class="text-xs text-slate-400 font-medium">Stránka 1</span>
+                        <button onclick="changePage(1)" id="next-page-btn" disabled class="px-4 py-2 bg-slate-800 text-slate-400 text-xs font-bold rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-700 hover:text-white cursor-pointer">
+                            Další
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        <!-- Statistiky účtu (Nové okno s přepínačem období) -->
+            <div id="section-statistics" class="section space-y-6">
+                <div class="space-y-2">
+                    <h1 class="text-3xl font-heading font-black text-white">Statistiky účtu 📊</h1>
+                    <p class="text-sm text-slate-400">Detailní přehled tvých výdělků a kompletní rozpad podle všech aktivit.</p>
+                </div>
+
+                <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-4">
+                    <h3 class="text-lg font-heading font-bold text-white border-b border-slate-800 pb-3">Celkové shrnutí</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div class="flex justify-between py-2 border-b border-slate-800/50">
+                            <span class="text-slate-400">ID uživatele:</span>
+                            <span class="font-mono text-white font-bold" id="stat-user-id">#NPP-8492</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-slate-800/50">
+                            <span class="text-slate-400">Celkově vyděláno (Lifetime):</span>
+                            <span class="text-emerald-400 font-bold"><span id="stat-lifetime">0</span> coinů</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-slate-800/50">
+                            <span class="text-slate-400">Počet referralů (1. úroveň):</span>
+                            <span class="text-blue-400 font-bold"><span id="stat-l1-count">0</span> lidí</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-slate-800/50">
+                            <span class="text-slate-400">Výdělky z referralů (1. úroveň):</span>
+                            <span class="text-blue-400 font-bold"><span id="stat-l1-lifetime">0</span> coinů</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-slate-800/50">
+                            <span class="text-slate-400">Počet referralů (2. úroveň):</span>
+                            <span class="text-purple-400 font-bold"><span id="stat-l2-count">0</span> lidí</span>
+                        </div>
+                        <div class="flex justify-between py-2 border-b border-slate-800/50">
+                            <span class="text-slate-400">Výdělky z referralů (2. úroveň):</span>
+                            <span class="text-purple-400 font-bold"><span id="stat-l2-lifetime">0</span> coinů</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800 pb-4">
+                        <div>
+                            <h3 class="text-lg font-heading font-bold text-white">Rozpad výdělků podle aktivit</h3>
+                            <span class="text-xs text-emerald-400 font-semibold" id="active-period-label">Zobrazeno za: Dnes</span>
+                        </div>
+                        
+                        <!-- Přepínač období -->
+                        <div class="bg-slate-950 p-1 rounded-2xl border border-slate-800 flex items-center space-x-1">
+                            <button onclick="switchStatsPeriod('day')" id="stat-btn-day" class="px-3 py-1.5 rounded-xl text-xs font-bold transition bg-emerald-500 text-slate-950 cursor-pointer">Den</button>
+                            <button onclick="switchStatsPeriod('week')" id="stat-btn-week" class="px-3 py-1.5 rounded-xl text-xs font-bold transition text-slate-400 hover:text-white cursor-pointer">Týden</button>
+                            <button onclick="switchStatsPeriod('month')" id="stat-btn-month" class="px-3 py-1.5 rounded-xl text-xs font-bold transition text-slate-400 hover:text-white cursor-pointer">Měsíc</button>
+                            <button onclick="switchStatsPeriod('year')" id="stat-btn-year" class="px-3 py-1.5 rounded-xl text-xs font-bold transition text-slate-400 hover:text-white cursor-pointer">Rok</button>
+                        </div>
+                    </div>
+
+                    <!-- Okna aktivit -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center"><div class="flex items-center space-x-3"><span class="text-xl">🎮</span><div><span class="font-bold text-white block">Testování her</span><span class="text-[10px] text-slate-400">Hry a herní testy</span></div></div><span class="text-emerald-400 font-bold text-sm">0 coinů</span></div>
+                        <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center"><div class="flex items-center space-x-3"><span class="text-xl">🌐</span><div><span class="font-bold text-white block">Testování webů</span><span class="text-[10px] text-slate-400">Návštěvy a testy portálů</span></div></div><span class="text-emerald-400 font-bold text-sm">0 coinů</span></div>
+                        <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center"><div class="flex items-center space-x-3"><span class="text-xl">📝</span><div><span class="font-bold text-white block">Registrace služeb</span><span class="text-[10px] text-slate-400">Založení účtů a ověření</span></div></div><span class="text-emerald-400 font-bold text-sm">0 coinů</span></div>
+                        <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center"><div class="flex items-center space-x-3"><span class="text-xl">⭐</span><div><span class="font-bold text-white block">Psaní recenzí</span><span class="text-[10px] text-slate-400">Hodnocení produktů a služeb</span></div></div><span class="text-emerald-400 font-bold text-sm">0 coinů</span></div>
+                        <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center"><div class="flex items-center space-x-3"><span class="text-xl">💬</span><div><span class="font-bold text-white block">Mikroúkoly & Sítě</span><span class="text-[10px] text-slate-400">Sociální sítě a interakce</span></div></div><span class="text-emerald-400 font-bold text-sm">0 coinů</span></div>
+                        <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center"><div class="flex items-center space-x-3"><span class="text-xl">📢</span><div><span class="font-bold text-white block">Klikání na reklamy</span><span class="text-[10px] text-slate-400">Propagace a PTC klikání</span></div></div><span class="text-emerald-400 font-bold text-sm">0 coinů</span></div>
+                        <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center"><div class="flex items-center space-x-3"><span class="text-xl">🎯</span><div><span class="font-bold text-white block">Plnění úkolů</span><span class="text-[10px] text-slate-400">Speciální nabídkové stěny</span></div></div><span class="text-emerald-400 font-bold text-sm">0 coinů</span></div>
+                        <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center"><div class="flex items-center space-x-3"><span class="text-xl">📋</span><div><span class="font-bold text-white block">Dotazníky</span><span class="text-[10px] text-slate-400">Marketingové průzkumy</span></div></div><span class="text-emerald-400 font-bold text-sm">0 coinů</span></div>
+                        <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center"><div class="flex items-center space-x-3"><span class="text-xl">🎬</span><div><span class="font-bold text-white block">Sledování videí</span><span class="text-[10px] text-slate-400">Video spoty a reklamy</span></div></div><span class="text-emerald-400 font-bold text-sm">0 coinů</span></div>
+                        <div class="bg-slate-950/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center"><div class="flex items-center space-x-3"><span class="text-xl">🎁</span><div><span class="font-bold text-white block">Denní úkoly & Bonusy</span><span class="text-[10px] text-slate-400">Streaky a odměny za sérii</span></div></div><span class="text-emerald-400 font-bold text-sm">0 coinů</span></div>
+                    </div>
+                </div>
+            </div>
+                
                 <!-- TESTOVÁNÍ HER -->
                 <div id="section-games" class="section space-y-6">
                     <div class="space-y-2">
@@ -524,351 +584,518 @@
                     </div>
                 </div>
 
-                <!-- Denní úkoly -->
-                <div id="section-bonus" class="section space-y-6">
-                    <div class="space-y-2">
-                        <h1 class="text-3xl font-heading font-black text-white">Denní výzvy a úkoly</h1>
-                        <p class="text-sm text-slate-400">Pro nárok na denní bonus je nutné splnit zadanou aktivitu. Tím chráníme ekonomiku systému a zajišťujeme odměny pro všechny!</p>
-                    </div>
+                <!-- Denní úkoly a VIP výzvy -->
+<div id="section-bonus" class="section space-y-8">
+    <div class="space-y-2">
+        <h1 class="text-3xl font-heading font-black text-white">Denní výzvy a úkoly</h1>
+        <p class="text-sm text-slate-400">Plň výzvy, buduj svou sérii a získej obrovské bonusy ke svým výdělkům. Tvoje aktivita = tvůj zisk.</p>
+    </div>
 
-                    <!-- Hlavní tlačítko pro splnění dnešního úkolu -->
-                    <div class="bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-slate-900/60 border border-purple-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
-                        <div class="space-y-1">
-                            <div class="inline-flex items-center space-x-2 bg-purple-500/20 text-purple-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold border border-purple-500/30">
-                                <span>🎯 Podmíněná denní výzva</span>
-                            </div>
-                            <p id="bonus-section-title" class="text-base font-heading font-bold text-white">Načítám úkol...</p>
-                            <p id="bonus-section-desc" class="text-xs text-slate-300">Splň tuto aktivitu a odemkni si denní bonus.</p>
-                        </div>
-                        <button id="bonus-claim-btn" onclick="claimDailyQuest()" class="w-full md:w-auto px-6 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white font-heading font-black py-3 rounded-xl transition shadow-lg text-sm cursor-pointer whitespace-nowrap">
-                            Vyzvednout odměnu
-                        </button>
-                    </div>
+    <!-- Hlavní VIP Výzva (Byznysová motivace) -->
+    <div class="bg-gradient-to-r from-yellow-950/40 via-amber-950/30 to-slate-900/60 border border-yellow-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+        <div class="absolute -right-10 -top-10 text-9xl opacity-5 select-none">🎯</div>
+        <div class="space-y-2 relative z-10">
+            <div class="inline-flex items-center space-x-2 bg-yellow-500/20 text-yellow-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold border border-yellow-500/30">
+                <span>🔥 VIP BYZNYSOVÁ VÝZVA</span>
+            </div>
+            <h2 id="bonus-section-title" class="text-xl font-heading font-black text-white">Lovec sítě: Přiveď 3 aktivní lidi!</h2>
+            <p id="bonus-section-desc" class="text-xs text-slate-300 max-w-lg">
+                Získej pro nás 3 nové aktivní hráče a odměníme tě <strong class="text-yellow-400">+20 % k výdělku na celý zítřejší den!</strong> Tvůj pasivní příjem roste s každým novým členem.
+            </p>
+        </div>
+        <button id="bonus-claim-btn" onclick="claimDailyQuest()" class="w-full md:w-auto px-8 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-heading font-black py-4 rounded-xl transition shadow-lg text-sm cursor-pointer whitespace-nowrap">
+            Vyzvednout bonus ➔
+        </button>
+    </div>
 
-                    <!-- Tabulka přehledu 7denní série -->
-                    <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-4">
-                        <div class="flex justify-between items-center">
-                            <h3 class="text-lg font-heading font-bold text-white">Přehled odměn za denní sérii</h3>
-                            <span class="text-xs font-semibold text-emerald-400">Aktuální série: <strong id="table-streak-count">1</strong>. den</span>
-                        </div>
-                        <p class="text-xs text-slate-400">Pokud vynecháš jediný den, řada se resetuje zpět na 1. den.</p>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2" id="streak-table-grid">
-                            <!-- Dynamicky vygenerováno JS -->
-                        </div>
-                    </div>
+    <!-- Tabulka přehledu 7denní série s viditelnou motivací -->
+    <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-4">
+        <div class="flex justify-between items-center">
+            <h3 class="text-lg font-heading font-bold text-white">Tvoje streak série & Odměny</h3>
+            <div class="bg-slate-950 px-4 py-1.5 rounded-full border border-slate-800">
+                <span class="text-xs font-semibold text-emerald-400">Aktuální série: <strong id="table-streak-count" class="text-white text-base">1</strong>. den</span>
+            </div>
+        </div>
+        
+        <!-- Výzvy v gridu -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-slate-950/50 border border-slate-800 p-4 rounded-2xl flex items-center gap-4">
+                <div class="w-10 h-10 bg-blue-500/10 text-blue-400 flex items-center justify-center rounded-xl text-xl">🎮</div>
+                <div>
+                    <h4 class="text-xs font-bold text-white">Šelma z Wall Street</h4>
+                    <p class="text-[10px] text-slate-400">Dokonči 1 velkou nabídku (Offerwall) a získej 500 coinů navíc.</p>
                 </div>
+            </div>
+            <div class="bg-slate-950/50 border border-slate-800 p-4 rounded-2xl flex items-center gap-4">
+                <div class="w-10 h-10 bg-emerald-500/10 text-emerald-400 flex items-center justify-center rounded-xl text-xl">🚀</div>
+                <div>
+                    <h4 class="text-xs font-bold text-white">Aktivní šampion</h4>
+                    <p class="text-[10px] text-slate-400">Zhlédni 10 reklam/videí a aktivuj si 10% bonus na 2 hodiny.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="pt-2">
+            <p class="text-xs font-bold text-slate-300">Jak rostou tvé denní odměny za sérii (Streak):</p>
+            <p class="text-[11px] text-slate-400">Udrž řetěz aktivní každý den. Pokud vynecháš, série se resetuje na 1. den a o hlavní MEGA odměnu přijdeš!</p>
+        </div>
+
+        <!-- Mřížka s dny -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 pt-2">
+            <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl text-center space-y-1">
+                <div class="text-[10px] text-slate-400 font-bold uppercase">1. den</div>
+                <div class="text-sm font-black text-white">50 coinů</div>
+                <div class="text-[9px] text-emerald-400 font-semibold">Základní odměna</div>
+            </div>
+            <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl text-center space-y-1">
+                <div class="text-[10px] text-slate-400 font-bold uppercase">2. den</div>
+                <div class="text-sm font-black text-white">100 coinů</div>
+                <div class="text-[9px] text-slate-400">Zamčeno 🔒</div>
+            </div>
+            <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl text-center space-y-1">
+                <div class="text-[10px] text-slate-400 font-bold uppercase">3. den</div>
+                <div class="text-sm font-black text-white">200 coinů</div>
+                <div class="text-[9px] text-slate-400">Zamčeno 🔒</div>
+            </div>
+            <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl text-center space-y-1">
+                <div class="text-[10px] text-slate-400 font-bold uppercase">4. den</div>
+                <div class="text-sm font-black text-white">350 coinů</div>
+                <div class="text-[9px] text-slate-400">Zamčeno 🔒</div>
+            </div>
+            <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl text-center space-y-1">
+                <div class="text-[10px] text-slate-400 font-bold uppercase">5. den</div>
+                <div class="text-sm font-black text-white">500 coinů</div>
+                <div class="text-[9px] text-slate-400">+5% bonus 🔒</div>
+            </div>
+            <div class="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl text-center space-y-1">
+                <div class="text-[10px] text-slate-400 font-bold uppercase">6. den</div>
+                <div class="text-sm font-black text-white">750 coinů</div>
+                <div class="text-[9px] text-slate-400">+10% bonus 🔒</div>
+            </div>
+            <div class="bg-gradient-to-br from-yellow-950/60 to-amber-950/60 border-2 border-yellow-500/60 p-3 rounded-2xl text-center space-y-1 relative shadow-lg sm:col-span-2 lg:col-span-1">
+                <div class="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-yellow-500 text-slate-950 font-black text-[9px] uppercase px-2 py-0.5 rounded-full">MEGA</div>
+                <div class="text-[10px] text-yellow-400 font-bold uppercase pt-1">7. den</div>
+                <div class="text-sm font-black text-white">2 000 coinů</div>
+                <div class="text-[9px] text-emerald-400 font-bold">+20% k výdělku 🚀</div>
+            </div>
+        </div>
+        <div id="streak-table-grid" class="hidden"></div>
+    </div>
+
+    <!-- Historie získaných bonusů a výher s fixní výškou a vnitřním scrollem -->
+    <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-4">
+        <div class="flex justify-between items-center">
+            <h3 class="text-lg font-heading font-bold text-white">Historie denních bonusů</h3>
+            <span class="text-xs text-slate-400">Poslední aktivita</span>
+        </div>
+        <p class="text-xs text-slate-400">Přehled tvých předchozích přihlášení, splněných výzev a připsaných odměn.</p>
+
+        <!-- Kontejner s fixní výškou a scrollem (max-h-72 zajistí cca 4-5 řádků viditelných najednou) -->
+        <div class="max-h-72 overflow-y-auto pr-2 custom-scrollbar">
+            <table class="w-full text-left border-collapse">
+                <thead class="sticky top-0 bg-slate-900 z-10">
+                    <tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase">
+                        <th class="py-3 px-4">Datum a čas</th>
+                        <th class="py-3 px-4">Typ aktivity</th>
+                        <th class="py-3 px-4">Získáno</th>
+                        <th class="py-3 px-4 text-right">Stav</th>
+                    </tr>
+                </thead>
+                <tbody class="text-xs text-slate-300 divide-y divide-slate-800/50" id="bonus-history-table">
+                    <tr>
+                        <td class="py-3.5 px-4 font-mono text-slate-400">Dnes, 14:20</td>
+                        <td class="py-3.5 px-4 font-semibold text-white">1. den série (Denní přihlášení)</td>
+                        <td class="py-3.5 px-4 text-emerald-400 font-bold">+50 coinů</td>
+                        <td class="py-3.5 px-4 text-right">
+                            <span class="bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-emerald-500/30">Připsáno</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="py-3.5 px-4 font-mono text-slate-400">Včera, 18:05</td>
+                        <td class="py-3.5 px-4 font-semibold text-white">Šelma z Wall Street (Offerwall)</td>
+                        <td class="py-3.5 px-4 text-emerald-400 font-bold">+500 coinů</td>
+                        <td class="py-3.5 px-4 text-right">
+                            <span class="bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-emerald-500/30">Připsáno</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="py-3.5 px-4 font-mono text-slate-400">Před 2 dny</td>
+                        <td class="py-3.5 px-4 font-semibold text-white">7. den série (MEGA ODMĚNA)</td>
+                        <td class="py-3.5 px-4 text-yellow-400 font-bold">+2 000 coinů + 20%</td>
+                        <td class="py-3.5 px-4 text-right">
+                            <span class="bg-yellow-500/20 text-yellow-300 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-yellow-500/30">Vyzvednuto</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="py-3.5 px-4 font-mono text-slate-400">Před 3 dny</td>
+                        <td class="py-3.5 px-4 font-semibold text-white">6. den série (Denní přihlášení)</td>
+                        <td class="py-3.5 px-4 text-emerald-400 font-bold">+750 coinů</td>
+                        <td class="py-3.5 px-4 text-right">
+                            <span class="bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-emerald-500/30">Připsáno</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="py-3.5 px-4 font-mono text-slate-400">Před 4 dny</td>
+                        <td class="py-3.5 px-4 font-semibold text-white">5. den série (Denní přihlášení)</td>
+                        <td class="py-3.5 px-4 text-emerald-400 font-bold">+500 coinů</td>
+                        <td class="py-3.5 px-4 text-right">
+                            <span class="bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-emerald-500/30">Připsáno</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="py-3.5 px-4 font-mono text-slate-400">Před 5 dny</td>
+                        <td class="py-3.5 px-4 font-semibold text-white">4. den série (Denní přihlášení)</td>
+                        <td class="py-3.5 px-4 text-emerald-400 font-bold">+350 coinů</td>
+                        <td class="py-3.5 px-4 text-right">
+                            <span class="bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-emerald-500/30">Připsáno</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
                 <!-- Referral systém -->
-                <div id="section-referrals" class="section space-y-6">
-                    <div class="space-y-2">
-                        <h1 class="text-3xl font-heading font-black text-white">Buduj svůj pasivní příjem</h1>
-                        <p class="text-sm text-slate-400">Sdílej svůj přímý odkaz, nebo si níže na stránce vytvoř vlastní propagační banner! Pro nejlepší bonusy doporučujeme přivést alespoň 5 aktivních přátel.</p>
+<div id="section-referrals" class="section space-y-8">
+    <div class="space-y-3">
+        <h1 class="text-3xl font-heading font-black text-white">Buduj své impérium & pasivní příjem 🚀</h1>
+        <p class="text-sm text-slate-400 max-w-3xl">Žijeme v době internetu, kde se dají vydělávat peníze, o kterých se nám v normální práci může jen snít. Zapomeň na drobné – budováním vlastní sítě aktivních lidí můžeš měsíčně generovat <strong class="text-emerald-400">desítky tisíc korun</strong> zcela bez práce.</p>
+    </div>
+
+    <!-- Brutální motivační banner -->
+    <div class="bg-gradient-to-r from-emerald-950/50 via-teal-950/40 to-slate-900/80 border border-emerald-500/40 p-8 rounded-3xl backdrop-blur-xl shadow-2xl relative overflow-hidden space-y-6">
+        <div class="absolute -right-6 -bottom-6 text-9xl opacity-10 select-none">💎</div>
+        
+        <div class="space-y-2 relative z-10">
+            <span class="bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-xl text-xs font-bold border border-emerald-500/30 uppercase tracking-widest">Tajemství nejbohatších hráčů</span>
+            <h2 class="text-2xl sm:text-3xl font-heading font-black text-white">Proč pracovat sám, když za tebe můžou vydělávat tisíce lidí?</h2>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
+                Podívej se pravdě do očí. V běžné práci vyměňuješ svůj čas za fixní mzdu, která ti inflace hned sežere. Ale co když pod sebou vybuduješ síť <strong class="text-white">stovek či tisíců aktivních uživatelů</strong>, kteří denně hrají hry, plní úkoly a klikají? Z každého jednoho z nich ti automaticky tečou peníze do peněženky, 24 hodin denně, 7 dní v týdnu. 
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 relative z-10">
+            <div class="bg-slate-950/60 border border-slate-800/80 p-4 rounded-2xl space-y-1">
+                <div class="text-emerald-400 font-heading font-black text-xl">1. Úroveň</div>
+                <div class="text-2xl font-black text-white">Až 15 % <span class="text-xs font-normal text-slate-400">zisků</span></div>
+                <p class="text-[11px] text-slate-400">Lidé, které pozveš ty osobně. Každá splněná hra nebo dotazník tvého kamaráda ti nese provizi.</p>
+            </div>
+            <div class="bg-slate-950/60 border border-slate-800/80 p-4 rounded-2xl space-y-1">
+                <div class="text-cyan-400 font-heading font-black text-xl">2. Úroveň</div>
+                <div class="text-2xl font-black text-white">Až 7.5 % <span class="text-xs font-normal text-slate-400">zisků</span></div>
+                <p class="text-[11px] text-slate-400">Lidé, které pozvou tvoji přátelé. Tady už mluvíme o čisté lavině, která roste bez tvého přičinění.</p>
+            </div>
+            <div class="bg-slate-950/60 border border-slate-800/80 p-4 rounded-2xl space-y-1">
+                <div class="text-yellow-400 font-heading font-black text-xl">Výsledek?</div>
+                <div class="text-2xl font-black text-white">10 000+ Kč <span class="text-xs font-normal text-slate-400">týdně</span></div>
+                <p class="text-[11px] text-slate-400">Top hráči naší platformy už dávno nepracují – jen sdílejí odkaz a sledují, jak jim rostou zůstatky.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Odkaz a kód pro sdílení -->
+    <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-4">
+        <div class="bg-slate-950/60 p-5 rounded-2xl border border-slate-800 space-y-3">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Váš osobní registrační odkaz:</p>
+            <span id="ref-link-display" class="text-emerald-400 font-mono text-xs break-all block">načítám...</span>
+            <div class="pt-2">
+                <span class="text-xs text-slate-400">Váš kód: <strong id="ref-code-display" class="bg-slate-900 px-3 py-1 rounded-lg border border-slate-800 text-white font-mono">načítám...</strong></span>
+            </div>
+        </div>
+
+        <h3 class="text-lg font-heading font-bold text-white pt-2">Statistiky vaší sítě</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-gradient-to-br from-blue-900/40 to-slate-900 border border-blue-500/30 p-5 rounded-2xl space-y-2">
+                <div class="text-xs font-bold text-blue-400 uppercase tracking-wider">1. Úroveň</div>
+                <div class="text-3xl font-heading font-black text-white"><span id="l1-count">0</span> <span class="text-sm font-normal text-slate-400">lidí</span></div>
+                <div class="inline-block bg-blue-500/20 text-blue-300 px-2.5 py-1 rounded-lg text-xs font-semibold border border-blue-500/30">Až 15 % z výdělku</div>
+            </div>
+
+            <div class="bg-gradient-to-br from-purple-900/40 to-slate-900 border border-purple-500/30 p-5 rounded-2xl space-y-2">
+                <div class="text-xs font-bold text-purple-400 uppercase tracking-wider">2. Úroveň</div>
+                <div class="text-3xl font-heading font-black text-white"><span id="l2-count">0</span> <span class="text-sm font-normal text-slate-400">lidí</span></div>
+                <div class="inline-block bg-purple-500/20 text-purple-300 px-2.5 py-1 rounded-lg text-xs font-semibold border border-purple-500/30">Až 7.5 % z výdělku</div>
+            </div>
+
+            <div class="bg-gradient-to-br from-emerald-900/40 to-slate-900 border border-emerald-500/30 p-5 rounded-2xl space-y-2">
+                <div class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Celkem v síti</div>
+                <div class="text-3xl font-heading font-black text-white"><span id="total-count">0</span> <span class="text-sm font-normal text-slate-400">lidí</span></div>
+                <div class="inline-block bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg text-xs font-semibold border border-emerald-500/30">Pasivní příjem</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Propagační materiály a generátor bannerů -->
+    <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-6">
+        <div class="space-y-2">
+            <div class="inline-flex items-center space-x-2 bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-xl text-xs font-bold border border-indigo-500/30">
+                <span>🎨 Promo nástroje</span>
+            </div>
+            <h3 class="text-lg font-heading font-bold text-white">Vytvoř si vlastní banner pro svůj web</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+                Zde si můžete vytvořit svůj vlastní banner o různých rozměrech a vložit na další weby, blogy nebo fóra, ať má váš kód větší dosah!
+            </p>
+        </div>
+
+        <!-- Ovládací prvky generátoru -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950/60 p-5 rounded-2xl border border-slate-800">
+            <div class="space-y-1.5">
+                <label class="block text-xs font-semibold text-slate-400">Šířka banneru (px)</label>
+                <select id="banner-width" onchange="updateBannerPreview()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 transition cursor-pointer">
+                    <option value="728">728 px (Leaderboard - klasický banner)</option>
+                    <option value="468">468 px (Full Banner)</option>
+                    <option value="300" selected>300 px (Medium Rectangle - čtverec)</option>
+                    <option value="250">250 px (Square)</option>
+                </select>
+            </div>
+            
+            <div class="space-y-1.5">
+                <label class="block text-xs font-semibold text-slate-400">Výška banneru (px)</label>
+                <select id="banner-height" onchange="updateBannerPreview()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 transition cursor-pointer">
+                    <option value="90">90 px (Úzký proužek)</option>
+                    <option value="250" selected>250 px (Standardní blok)</option>
+                    <option value="350">350 px (Vysoký blok)</option>
+                    <option value="600">600 px (Half Page)</option>
+                </select>
+            </div>
+
+            <div class="sm:col-span-2 space-y-1.5 pt-2">
+                <label class="block text-xs font-semibold text-slate-400">Hlavní nadpis na banneru</label>
+                <input type="text" id="banner-text" value="Vydělávejte peníze online zdarma!" oninput="updateBannerPreview()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
+            </div>
+        </div>
+
+        <!-- Náhled banneru -->
+        <div class="space-y-2">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Živý náhled banneru:</span>
+            <div class="flex justify-center p-6 bg-slate-950/80 border border-slate-800 rounded-2xl overflow-x-auto">
+                <div id="banner-preview-box" class="bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950 border-2 border-emerald-500/50 p-6 rounded-2xl flex flex-col justify-between shadow-2xl transition-all duration-300 text-center relative overflow-hidden" style="width: 300px; height: 250px;">
+                    <div class="absolute -right-6 -top-6 text-6xl opacity-10 select-none">⚡</div>
+                    <div class="space-y-1">
+                        <span class="bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold border border-emerald-500/30">NeonPayPulse</span>
+                        <h4 id="preview-title" class="text-sm font-heading font-bold text-white leading-snug pt-1">Vydělávejte peníze online zdarma!</h4>
                     </div>
-
-                    <!-- Vysvětlení jak systém funguje -->
-                    <div class="bg-gradient-to-r from-emerald-950/30 via-teal-950/20 to-slate-900/60 border border-emerald-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-4">
-                        <div class="inline-flex items-center space-x-2 bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-xl text-xs font-bold border border-emerald-500/30">
-                            <span>ℹ️ Jak funguje vícestupňový systém?</span>
-                        </div>
-                        <h3 class="text-lg font-heading font-bold text-white">Příjmy ze dvou úrovní vaší komunity</h3>
-                        <p class="text-xs text-slate-300 leading-relaxed">
-                            Náš systém je navržen tak, aby vás odměňoval nejen za lidi, které přímo pozvete vy sami, ale i za uživatele, které přivedou oni. Budováním sítě (cílem je alespoň 5 aktivních členů) si tak vytváříte stabilní pasivní zdroj coinů.
-                        </p>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                            <!-- 1. Úroveň -->
-                            <div class="bg-slate-950/60 border border-blue-500/30 p-4 rounded-2xl space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-blue-400 uppercase tracking-wider">1. Úroveň (Přímí přátelé)</span>
-                                    <span class="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-lg text-xs font-bold border border-blue-500/30">Základ: 10 % provize</span>
-                                </div>
-                                <p class="text-xs text-slate-300">
-                                    Lidé, které zaregistruješ přímo přes svůj vlastní referral odkaz. Získáváš <strong>10 % ze všech coinů</strong>, které aktivně vydělají.
-                                </p>
-                            </div>
-
-                            <!-- 2. Úroveň -->
-                            <div class="bg-slate-950/60 border border-purple-500/30 p-4 rounded-2xl space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-purple-400 uppercase tracking-wider">2. Úroveň (Nepřímí přátelé)</span>
-                                    <span class="bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-lg text-xs font-bold border border-purple-500/30">Základ: 5 % provize</span>
-                                </div>
-                                <p class="text-xs text-slate-300">
-                                    Lidé, které pozvou tvoji přátelé z 1. úrovně. Z jejich výdělku automaticky získáváš <strong>5 % navíc</strong>, aniž bys musel cokoliv dělat.
-                                </p>
-                            </div>
-                        </div>
+                    <div class="text-[10px] text-slate-300">
+                        <span>100 % zdarma • Pasivní příjem</span>
                     </div>
-                    
-                    <!-- Odkaz a kód pro sdílení -->
-                    <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-4">
-                        <div class="bg-slate-950/60 p-5 rounded-2xl border border-slate-800 space-y-3">
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Váš osobní registrační odkaz:</p>
-                            <span id="ref-link-display" class="text-emerald-400 font-mono text-xs break-all block">načítám...</span>
-                            <div class="pt-2">
-                                <span class="text-xs text-slate-400">Váš kód: <strong id="ref-code-display" class="bg-slate-900 px-3 py-1 rounded-lg border border-slate-800 text-white font-mono">načítám...</strong></span>
-                            </div>
-                        </div>
-
-                        <h3 class="text-lg font-heading font-bold text-white pt-2">Statistiky vaší sítě</h3>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="bg-gradient-to-br from-blue-900/40 to-slate-900 border border-blue-500/30 p-5 rounded-2xl space-y-2">
-                                <div class="text-xs font-bold text-blue-400 uppercase tracking-wider">1. Úroveň</div>
-                                <div class="text-3xl font-heading font-black text-white"><span id="l1-count">0</span> <span class="text-sm font-normal text-slate-400">lidí</span></div>
-                                <div class="inline-block bg-blue-500/20 text-blue-300 px-2.5 py-1 rounded-lg text-xs font-semibold border border-blue-500/30">10 % z výdělku</div>
-                            </div>
-
-                            <div class="bg-gradient-to-br from-purple-900/40 to-slate-900 border border-purple-500/30 p-5 rounded-2xl space-y-2">
-                                <div class="text-xs font-bold text-purple-400 uppercase tracking-wider">2. Úroveň</div>
-                                <div class="text-3xl font-heading font-black text-white"><span id="l2-count">0</span> <span class="text-sm font-normal text-slate-400">lidí</span></div>
-                                <div class="inline-block bg-purple-500/20 text-purple-300 px-2.5 py-1 rounded-lg text-xs font-semibold border border-purple-500/30">5 % z výdělku</div>
-                            </div>
-
-                            <div class="bg-gradient-to-br from-emerald-900/40 to-slate-900 border border-emerald-500/30 p-5 rounded-2xl space-y-2">
-                                <div class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Celkem v síti</div>
-                                <div class="text-3xl font-heading font-black text-white"><span id="total-count">0</span> <span class="text-sm font-normal text-slate-400">lidí</span></div>
-                                <div class="inline-block bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg text-xs font-semibold border border-emerald-500/30">Aktivní</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Propagační materiály a generátor bannerů -->
-                    <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-6">
-                        <div class="space-y-2">
-                            <div class="inline-flex items-center space-x-2 bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-xl text-xs font-bold border border-indigo-500/30">
-                                <span>🎨 Promo nástroje</span>
-                            </div>
-                            <h3 class="text-lg font-heading font-bold text-white">Vytvoř si vlastní banner pro svůj web</h3>
-                            <p class="text-xs text-slate-300 leading-relaxed">
-                                Zde si můžete vytvořit svůj vlastní banner o různých rozměrech a vložit na další weby, blogy nebo fóra, ať má váš kód větší dosah!
-                            </p>
-                        </div>
-
-                        <!-- Ovládací prvky generátoru -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950/60 p-5 rounded-2xl border border-slate-800">
-                            <div class="space-y-1.5">
-                                <label class="block text-xs font-semibold text-slate-400">Šířka banneru (px)</label>
-                                <select id="banner-width" onchange="updateBannerPreview()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 transition cursor-pointer">
-                                    <option value="728">728 px (Leaderboard - klasický banner)</option>
-                                    <option value="468">468 px (Full Banner)</option>
-                                    <option value="300" selected>300 px (Medium Rectangle - čtverec)</option>
-                                    <option value="250">250 px (Square)</option>
-                                </select>
-                            </div>
-                            
-                            <div class="space-y-1.5">
-                                <label class="block text-xs font-semibold text-slate-400">Výška banneru (px)</label>
-                                <select id="banner-height" onchange="updateBannerPreview()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 transition cursor-pointer">
-                                    <option value="90">90 px (Úzký proužek)</option>
-                                    <option value="250" selected>250 px (Standardní blok)</option>
-                                    <option value="350">350 px (Vysoký blok)</option>
-                                    <option value="600">600 px (Half Page)</option>
-                                </select>
-                            </div>
-
-                            <div class="sm:col-span-2 space-y-1.5 pt-2">
-                                <label class="block text-xs font-semibold text-slate-400">Hlavní nadpis na banneru</label>
-                                <input type="text" id="banner-text" value="Vydělávejte peníze online zdarma!" oninput="updateBannerPreview()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
-                            </div>
-                        </div>
-
-                        <!-- Náhled banneru -->
-                        <div class="space-y-2">
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Živý náhled banneru:</span>
-                            <div class="flex justify-center p-6 bg-slate-950/80 border border-slate-800 rounded-2xl overflow-x-auto">
-                                <div id="banner-preview-box" class="bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950 border-2 border-emerald-500/50 p-6 rounded-2xl flex flex-col justify-between shadow-2xl transition-all duration-300 text-center relative overflow-hidden" style="width: 300px; height: 250px;">
-                                    <div class="absolute -right-6 -top-6 text-6xl opacity-10 select-none">⚡</div>
-                                    <div class="space-y-1">
-                                        <span class="bg-emerald-500/20 text-emerald-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold border border-emerald-500/30">NeonPayPulse</span>
-                                        <h4 id="preview-title" class="text-sm font-heading font-bold text-white leading-snug pt-1">Vydělávejte peníze online zdarma!</h4>
-                                    </div>
-                                    <div class="text-[10px] text-slate-300">
-                                        <span>100 % zdarma • Pasivní příjem</span>
-                                    </div>
-                                    <div class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-heading font-black text-xs py-2 px-4 rounded-xl shadow-md transition">
-                                        Připojit se hned ➔
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Výsledný HTML kód ke kopírování -->
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">HTML kód pro vložení na web:</span>
-                                <button onclick="copyBannerCode()" class="text-xs text-emerald-400 hover:text-emerald-300 font-bold transition cursor-pointer">Zkopírovat kód</button>
-                            </div>
-                            <textarea id="banner-code-output" readonly class="w-full h-24 bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] text-emerald-400 font-mono focus:outline-none resize-none"></textarea>
-                        </div>
+                    <div class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-heading font-black text-xs py-2 px-4 rounded-xl shadow-md transition">
+                        Připojit se hned ➔
                     </div>
                 </div>
+            </div>
+        </div>
 
+        <!-- Výsledný HTML kód ke kopírování -->
+        <div class="space-y-2">
+            <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">HTML kód pro vložení na web:</span>
+                <button onclick="copyBannerCode()" class="text-xs text-emerald-400 hover:text-emerald-300 font-bold transition cursor-pointer">Zkopírovat kód</button>
+            </div>
+            <textarea id="banner-code-output" readonly class="w-full h-24 bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] text-emerald-400 font-mono focus:outline-none resize-none"></textarea>
+        </div>
+    </div>
+</div>
                 <!-- VIP Balíčky -->
-                <div id="section-vip" class="section space-y-6">
-                    <div class="space-y-3">
-                        <h1 class="text-3xl font-heading font-black text-white">VIP Balíčky</h1>
-                        <p class="text-sm text-slate-400 max-w-3xl">Přejděte na vyšší úroveň a začněte vydělávat jako profesionál. VIP balíčky můžete uhradit ze svého peněžního zůstatku nebo si je zakoupit přímo za své vydělané coiny.</p>
-                    </div>
+<div id="section-vip" class="section space-y-6">
+    <div class="space-y-3">
+        <h1 class="text-3xl font-heading font-black text-white">VIP Balíčky</h1>
+        <p class="text-sm text-slate-400 max-w-3xl">Přejděte na vyšší úroveň a začněte vydělávat jako profesionál. VIP balíčky můžete uhradit ze svého peněžního zůstatku nebo si je zakoupit přímo za své vydělané coiny.</p>
+    </div>
 
-                    <!-- Informační banner pro VIP s ukázkami výdělku -->
-                    <div class="bg-gradient-to-r from-amber-950/30 via-orange-950/20 to-slate-900/60 border border-amber-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div class="space-y-2">
-                                <div class="text-xl">🚀</div>
-                                <h3 class="font-bold text-white text-sm">Rychlejší návratnost</h3>
-                                <p class="text-xs text-slate-300">Získejte až o 60 % více coinů za úplně stejnou práci. Běžný uživatel kliká měsíc, vy máte hotovo za polovinu času.</p>
-                            </div>
-                            <div class="space-y-2">
-                                <div class="text-xl">💸</div>
-                                <h3 class="font-bold text-white text-sm">Masivní síťový efekt</h3>
-                                <p class="text-xs text-slate-300">Pokud budujete komunitu, VIP balíček se vám zaplatí takřka okamžitě díky zvýšeným procentům z obou úrovní sítě.</p>
-                            </div>
-                            <div class="space-y-2">
-                                <div class="text-xl">⚡</div>
-                                <h3 class="font-bold text-white text-sm">Přednostní výplaty</h3>
-                                <p class="text-xs text-slate-300">Zatímco ostatní čekají na schválení výplaty, žádosti VIP uživatelů se automaticky posouvají na přední místa fronty.</p>
-                            </div>
-                        </div>
-                        
-                        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Běžný příklad -->
-                            <div class="p-4 bg-slate-950/50 border border-slate-800 rounded-2xl">
-                                <h4 class="text-sm font-bold text-amber-400 mb-1">Běžný příklad z praxe:</h4>
-                                <p class="text-xs text-slate-300 leading-relaxed">
-                                    Představte si, že vaše síť přátel vygeneruje za měsíc <strong class="text-white">500 000 coinů</strong>. 
-                                    Jako Free uživatel dostanete z jejich aktivity 10% provizi (50 000 coinů = 500 Kč). 
-                                    Pokud si ale aktivujete <strong class="text-yellow-400">Gold VIP</strong>, dostanete plných 15% (75 000 coinů = 750 Kč). 
-                                    Tím se vám velká část balíčku zaplatí okamžitě zpět, a to navíc k vašim osobním ziskům!
-                                </p>
-                            </div>
+    <!-- Informační banner pro VIP s ukázkami výdělku -->
+    <div class="bg-gradient-to-r from-amber-950/30 via-orange-950/20 to-slate-900/60 border border-amber-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="space-y-2">
+                <div class="text-xl">🚀</div>
+                <h3 class="font-bold text-white text-sm">Rychlejší návratnost</h3>
+                <p class="text-xs text-slate-300">Získejte až o 60 % větší odměny za testování her, dotazníky i klikání. S VIP balíčkem se vám čas zhodnotí násobně rychleji.</p>
+            </div>
+            <div class="space-y-2">
+                <div class="text-xl">💸</div>
+                <h3 class="font-bold text-white text-sm">Masivní síťový efekt</h3>
+                <p class="text-xs text-slate-300">Pokud budujete komunitu, VIP balíček se vám zaplatí takřka okamžitě díky zvýšeným procentům z obou úrovní sítě.</p>
+            </div>
+            <div class="space-y-2">
+                <div class="text-xl">⚡</div>
+                <h3 class="font-bold text-white text-sm">Přednostní výplaty</h3>
+                <p class="text-xs text-slate-300">Zatímco ostatní čekají na schválení výplaty, žádosti VIP uživatelů se automaticky posouvají na přední místa fronty.</p>
+            </div>
+        </div>
+        
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Běžný příklad -->
+            <div class="p-4 bg-slate-950/50 border border-slate-800 rounded-2xl">
+                <h4 class="text-sm font-bold text-amber-400 mb-1">Běžný příklad z praxe:</h4>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    Díky herním úkolům a testování si aktivní uživatel vydělá měsíčně např. <strong class="text-white">3 000 Kč</strong>. 
+                    S aktivním <strong class="text-yellow-400">Gold VIP</strong> (+60 %) vyskočí jeho vlastní výdělek na <strong class="text-white">4 800 Kč</strong>. 
+                    Čistý zisk navíc je 1 800 Kč, takže cena balíčku (499 Kč) se mu mnohonásobně vrátí hned v prvním týdnu!
+                </p>
+            </div>
 
-                            <!-- Příklad s velkou sítí -->
-                            <div class="p-4 bg-gradient-to-br from-yellow-900/20 to-slate-950/50 border border-yellow-600/30 rounded-2xl relative overflow-hidden">
-                                <div class="absolute -right-2 -top-2 text-4xl opacity-10">🚀</div>
-                                <h4 class="text-sm font-bold text-yellow-400 mb-1">Pro šikovné s velkou sítí:</h4>
-                                <p class="text-xs text-slate-300 leading-relaxed relative z-10">
-                                    Máte pod sebou aktivní komunitu, která vygeneruje <strong class="text-white">10 000 000 coinů</strong>? 
-                                    Základní 10% provize by vám přinesla 10 000 Kč. Ale s <strong class="text-yellow-400">Gold VIP</strong> 
-                                    vyskočí vaše odměna na neuvěřitelných 15 %, což znamená <strong class="text-white">15 000 Kč</strong> měsíčně zcela pasivně. 
-                                    Za investici 289 Kč (nebo 28 900 coinů) tak získáte <strong class="text-emerald-400">5 000 Kč čistého zisku navíc</strong>.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Příklad s velkou sítí -->
+            <div class="p-4 bg-gradient-to-br from-yellow-900/20 to-slate-950/50 border border-yellow-600/30 rounded-2xl relative overflow-hidden">
+                <div class="absolute -right-2 -top-2 text-4xl opacity-10">🚀</div>
+                <h4 class="text-sm font-bold text-yellow-400 mb-1">Pro šikovné s velkou sítí:</h4>
+                <p class="text-xs text-slate-300 leading-relaxed relative z-10">
+                    Máte pod sebou aktivní komunitu, která vygeneruje obrat <strong class="text-white">10 000 000 coinů</strong>? 
+                    Základní 10% provize by vám přinesla 10 000 Kč. Ale s <strong class="text-yellow-400">Gold VIP (15 %)</strong> 
+                    vyskočí vaše odměna na <strong class="text-white">15 000 Kč</strong> měsíčně zcela pasivně. 
+                    Za investici 499 Kč tak získáte <strong class="text-emerald-400">4 500 Kč čistého zisku navíc</strong> jen na síti.
+                </p>
+            </div>
+        </div>
+    </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-                        <!-- Bronz VIP -->
-                        <div class="card-box bg-slate-900/60 border border-amber-800/40 p-6 rounded-3xl backdrop-blur-xl shadow-xl flex flex-col justify-between">
-                            <div class="space-y-4">
-                                <div class="inline-block bg-amber-900/20 text-amber-400 px-3 py-1 rounded-xl text-xs font-bold border border-amber-700/30">Bronz VIP</div>
-                                <div class="text-3xl font-heading font-black text-white">89 <span class="text-sm font-normal text-slate-400">Kč</span></div>
-                                <div class="text-xs font-semibold text-emerald-400">nebo 8 900 coinů</div>
-                                <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider pt-2">Na 30 dní</div>
-                                <ul class="space-y-2.5 text-xs text-slate-300 pt-2 border-t border-slate-800/80">
-                                    <li>Vlastní výdělek <strong class="text-white">+20 %</strong></li>
-                                    <li>Bonus za denní sérii <strong class="text-white">+20 %</strong></li>
-                                    <li>Provize sítě: 10 % a 5 %</li>
-                                </ul>
-                            </div>
-                            <div class="pt-6">
-                                <button onclick="doAction('buy-vip-bronze')" class="w-full bg-amber-600 hover:bg-amber-500 text-slate-950 font-heading font-bold py-3 rounded-xl transition text-xs cursor-pointer">Koupit balíček</button>
-                            </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+        <!-- Bronz VIP -->
+        <div class="card-box bg-slate-900/60 border border-amber-800/40 p-6 rounded-3xl backdrop-blur-xl shadow-xl flex flex-col justify-between">
+            <div class="space-y-4">
+                <div class="inline-block bg-amber-900/20 text-amber-400 px-3 py-1 rounded-xl text-xs font-bold border border-amber-700/30">Bronz VIP</div>
+                <div class="text-3xl font-heading font-black text-white">149 <span class="text-sm font-normal text-slate-400">Kč</span></div>
+                <div class="text-xs font-semibold text-emerald-400">nebo 14 900 coinů</div>
+                <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider pt-2">Na 30 dní</div>
+                <ul class="space-y-2.5 text-xs text-slate-300 pt-2 border-t border-slate-800/80">
+                    <li>Vlastní výdělek <strong class="text-white">+20 %</strong></li>
+                    <li>Bonus za denní sérii <strong class="text-white">+20 %</strong></li>
+                    <li class="space-y-1">
+                        <span class="text-slate-400 block">Provize sítě:</span>
+                        <div class="pl-2 border-l-2 border-amber-700/50 space-y-0.5 text-[11px]">
+                            <div>• Přímý referral: <strong class="text-white">10 %</strong></div>
+                            <div>• 2. úroveň (lidi od nich): <strong class="text-white">5 %</strong></div>
                         </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="pt-6">
+                <button onclick="doAction('buy-vip-bronze')" class="w-full bg-amber-600 hover:bg-amber-500 text-slate-950 font-heading font-bold py-3 rounded-xl transition text-xs cursor-pointer">Koupit balíček</button>
+            </div>
+        </div>
 
-                        <!-- Silver VIP -->
-                        <div class="card-box bg-slate-900/60 border border-slate-400/40 p-6 rounded-3xl backdrop-blur-xl shadow-xl flex flex-col justify-between">
-                            <div class="space-y-4">
-                                <div class="inline-block bg-slate-400/20 text-slate-300 px-3 py-1 rounded-xl text-xs font-bold">Silver VIP</div>
-                                <div class="text-3xl font-heading font-black text-white">189 <span class="text-sm font-normal text-slate-400">Kč</span></div>
-                                <div class="text-xs font-semibold text-emerald-400">nebo 18 900 coinů</div>
-                                <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider pt-2">Na 30 dní</div>
-                                <ul class="space-y-2.5 text-xs text-slate-300 pt-2 border-t border-slate-800/80">
-                                    <li>Vlastní výdělek <strong class="text-white">+40 %</strong></li>
-                                    <li>Bonus za denní sérii <strong class="text-white">+40 %</strong></li>
-                                    <li>Provize sítě: <strong class="text-emerald-400">12 % a 6 %</strong></li>
-                                </ul>
-                            </div>
-                            <div class="pt-6">
-                                <button onclick="doAction('buy-vip-silver')" class="w-full bg-slate-200 hover:bg-white text-slate-950 font-heading font-bold py-3 rounded-xl transition text-xs cursor-pointer">Koupit balíček</button>
-                            </div>
+        <!-- Silver VIP -->
+        <div class="card-box bg-slate-900/60 border border-slate-400/40 p-6 rounded-3xl backdrop-blur-xl shadow-xl flex flex-col justify-between">
+            <div class="space-y-4">
+                <div class="inline-block bg-slate-400/20 text-slate-300 px-3 py-1 rounded-xl text-xs font-bold">Silver VIP</div>
+                <div class="text-3xl font-heading font-black text-white">299 <span class="text-sm font-normal text-slate-400">Kč</span></div>
+                <div class="text-xs font-semibold text-emerald-400">nebo 29 900 coinů</div>
+                <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider pt-2">Na 30 dní</div>
+                <ul class="space-y-2.5 text-xs text-slate-300 pt-2 border-t border-slate-800/80">
+                    <li>Vlastní výdělek <strong class="text-white">+40 %</strong></li>
+                    <li>Bonus za denní sérii <strong class="text-white">+40 %</strong></li>
+                    <li class="space-y-1">
+                        <span class="text-slate-400 block">Provize sítě:</span>
+                        <div class="pl-2 border-l-2 border-slate-400/50 space-y-0.5 text-[11px]">
+                            <div>• Přímý referral: <strong class="text-emerald-400">12 %</strong></div>
+                            <div>• 2. úroveň (lidi od nich): <strong class="text-emerald-400">6 %</strong></div>
                         </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="pt-6">
+                <button onclick="doAction('buy-vip-silver')" class="w-full bg-slate-200 hover:bg-white text-slate-950 font-heading font-bold py-3 rounded-xl transition text-xs cursor-pointer">Koupit balíček</button>
+            </div>
+        </div>
 
-                        <!-- Gold VIP -->
-                        <div class="card-box bg-slate-900/60 border border-yellow-500/40 p-6 rounded-3xl backdrop-blur-xl shadow-xl flex flex-col justify-between relative">
-                            <div class="absolute -top-3 right-6 bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 font-black text-[10px] uppercase px-3 py-1 rounded-full shadow-lg">Nejpopulárnější</div>
-                            <div class="space-y-4">
-                                <div class="inline-block bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-xl text-xs font-bold">Gold VIP</div>
-                                <div class="text-3xl font-heading font-black text-white">289 <span class="text-sm font-normal text-slate-400">Kč</span></div>
-                                <div class="text-xs font-semibold text-emerald-400">nebo 28 900 coinů</div>
-                                <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider pt-2">Na 30 dní</div>
-                                <ul class="space-y-2.5 text-xs text-slate-300 pt-2 border-t border-slate-800/80">
-                                    <li>Vlastní výdělek <strong class="text-white">+60 %</strong></li>
-                                    <li>Bonus za denní sérii <strong class="text-white">+60 %</strong></li>
-                                    <li>Provize sítě: <strong class="text-yellow-400">15 % a 7.5 %</strong></li>
-                                </ul>
-                            </div>
-                            <div class="pt-6">
-                                <button onclick="doAction('buy-vip-gold')" class="w-full bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 font-heading font-bold py-3 rounded-xl transition text-xs cursor-pointer">Koupit balíček</button>
-                            </div>
+        <!-- Gold VIP -->
+        <div class="card-box bg-slate-900/60 border border-yellow-500/40 p-6 rounded-3xl backdrop-blur-xl shadow-xl flex flex-col justify-between relative">
+            <div class="absolute -top-3 right-6 bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 font-black text-[10px] uppercase px-3 py-1 rounded-full shadow-lg">Nejpopulárnější</div>
+            <div class="space-y-4">
+                <div class="inline-block bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-xl text-xs font-bold">Gold VIP</div>
+                <div class="text-3xl font-heading font-black text-white">499 <span class="text-sm font-normal text-slate-400">Kč</span></div>
+                <div class="text-xs font-semibold text-emerald-400">nebo 49 900 coinů</div>
+                <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider pt-2">Na 30 dní</div>
+                <ul class="space-y-2.5 text-xs text-slate-300 pt-2 border-t border-slate-800/80">
+                    <li>Vlastní výdělek <strong class="text-white">+60 %</strong></li>
+                    <li>Bonus za denní sérii <strong class="text-white">+60 %</strong></li>
+                    <li class="space-y-1">
+                        <span class="text-slate-400 block">Provize sítě:</span>
+                        <div class="pl-2 border-l-2 border-yellow-500/50 space-y-0.5 text-[11px]">
+                            <div>• Přímý referral: <strong class="text-yellow-400">15 %</strong></div>
+                            <div>• 2. úroveň (lidi od nich): <strong class="text-yellow-400">7.5 %</strong></div>
                         </div>
-                    </div>
-                </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="pt-6">
+                <button onclick="doAction('buy-vip-gold')" class="w-full bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 font-heading font-bold py-3 rounded-xl transition text-xs cursor-pointer">Koupit balíček</button>
+            </div>
+        </div>
+    </div>
+</div>
 
                 <!-- Výplaty -->
-                <div id="section-payouts" class="section space-y-6">
-                    <div class="space-y-2">
-                        <h1 class="text-3xl font-heading font-black text-white">Výplaty peněz</h1>
-                        <p class="text-sm text-slate-400">Minimální částka pro výplatu je <strong>200 Kč (20 000 coinů)</strong>. Výplaty procházejí ručním auditem před odesláním.</p>
-                    </div>
+<div id="section-payouts" class="section space-y-6">
+    <div class="space-y-2">
+        <h1 class="text-3xl font-heading font-black text-white">Výplaty peněz 💳</h1>
+        <p class="text-sm text-slate-400">Minimální částka pro výplatu je <strong>200 Kč (20 000 coinů)</strong>. Výplaty procházejí ručním auditem před odesláním.</p>
+    </div>
 
-                    <div class="card-box bg-slate-900/60 border border-slate-800/80 p-8 rounded-3xl backdrop-blur-xl shadow-xl space-y-6">
-                        <h3 class="text-lg font-heading font-bold text-white">Zadejte platební údaje</h3>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <!-- PayPal -->
-                            <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl space-y-3">
-                                <div class="flex items-center space-x-2">
-                                    <input type="radio" name="payout-method" id="method-paypal" class="accent-emerald-500 cursor-pointer" checked>
-                                    <label for="method-paypal" class="font-bold text-xs text-white cursor-pointer">PayPal účet</label>
-                                </div>
-                                <input type="email" id="payout-paypal-input" placeholder="vas.email@paypal.com" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
-                            </div>
+    <!-- Profesionální informační karty o garancích -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
+            <div class="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center font-bold text-lg border border-emerald-500/30">⚡</div>
+            <h3 class="font-heading font-bold text-white text-base">Rychlé zpracování</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">Žádosti o výplatu vyřizujeme v průběhu 24–48 hodin. VIP uživatelé mají přednostní odbavení.</p>
+        </div>
+        <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
+            <div class="w-10 h-10 bg-teal-500/20 text-teal-400 rounded-2xl flex items-center justify-center font-bold text-lg border border-teal-500/30">🛡️</div>
+            <h3 class="font-heading font-bold text-base text-white">Bezpečný audit</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">Každá výplata prochází ruční kontrolou, aby byla zajištěna stoprocentní ochrana tvých financí.</p>
+        </div>
+        <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
+            <div class="w-10 h-10 bg-cyan-500/20 text-cyan-400 rounded-2xl flex items-center justify-center font-bold text-lg border border-cyan-500/30">📊</div>
+            <h3 class="font-heading font-bold text-base text-white">Jistota a přehled</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">Žádné skryté zady – vše máš pod naprostou kontrolou přímo ve svém dashboardu.</p>
+        </div>
+    </div>
 
-                            <!-- Bankovní účet IBAN -->
-                            <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl space-y-3">
-                                <div class="flex items-center space-x-2">
-                                    <input type="radio" name="payout-method" id="method-iban" class="accent-emerald-500 cursor-pointer">
-                                    <label for="method-iban" class="font-bold text-xs text-white cursor-pointer">Bankovní účet (IBAN)</label>
-                                </div>
-                                <input type="text" id="payout-iban-input" placeholder="CZ00 0000 0000 0000..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
-                            </div>
-
-                            <!-- Platební karta -->
-                            <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl space-y-3">
-                                <div class="flex items-center space-x-2">
-                                    <input type="radio" name="payout-method" id="method-card" class="accent-emerald-500 cursor-pointer">
-                                    <label for="method-card" class="font-bold text-xs text-white cursor-pointer">Platební karta</label>
-                                </div>
-                                <input type="text" id="payout-card-input" placeholder="4000 1234 5678 9010" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
-                            </div>
-                        </div>
-
-                        <!-- Upozornění na poplatek -->
-                        <div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-xs text-emerald-300 space-y-1">
-                            <strong>ℹ️ Informace k poplatkům a zpracování:</strong>
-                            <p>NeonPayPulse si z vašich výdělků nebere žádné skryté poplatky. Účtován je pouze poplatek 10 % za zpracování transakce platební bránou. Žádosti o výplatu podléhají manuálnímu schválení a auditu (zpracování do 48 hod).</p>
-                        </div>
-
-                        <div class="pt-2">
-                            <button onclick="requestPayout()" class="px-8 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-heading font-black text-xs rounded-xl transition cursor-pointer shadow-lg">
-                                Odeslat žádost o výplatu (min. 200 Kč) ➔
-                            </button>
-                        </div>
-                    </div>
+    <div class="card-box bg-slate-900/60 border border-slate-800/80 p-8 rounded-3xl backdrop-blur-xl shadow-xl space-y-6">
+        <h3 class="text-lg font-heading font-bold text-white">Zadejte platební údaje</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- PayPal -->
+            <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl space-y-3">
+                <div class="flex items-center space-x-2">
+                    <input type="radio" name="payout-method" id="method-paypal" class="accent-emerald-500 cursor-pointer" checked>
+                    <label for="method-paypal" class="font-bold text-xs text-white cursor-pointer">PayPal účet</label>
                 </div>
+                <input type="email" id="payout-paypal-input" placeholder="vas.email@paypal.com" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
+            </div>
 
+            <!-- Bankovní účet IBAN -->
+            <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl space-y-3">
+                <div class="flex items-center space-x-2">
+                    <input type="radio" name="payout-method" id="method-iban" class="accent-emerald-500 cursor-pointer">
+                    <label for="method-iban" class="font-bold text-xs text-white cursor-pointer">Bankovní účet (IBAN)</label>
+                </div>
+                <input type="text" id="payout-iban-input" placeholder="CZ00 0000 0000 0000..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
+            </div>
+
+            <!-- Platební karta -->
+            <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl space-y-3">
+                <div class="flex items-center space-x-2">
+                    <input type="radio" name="payout-method" id="method-card" class="accent-emerald-500 cursor-pointer">
+                    <label for="method-card" class="font-bold text-xs text-white cursor-pointer">Platební karta</label>
+                </div>
+                <input type="text" id="payout-card-input" placeholder="4000 1234 5678 9010" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
+            </div>
+        </div>
+
+        <!-- Upozornění na poplatek -->
+        <div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-xs text-emerald-300 space-y-1">
+            <strong>ℹ️ Informace k poplatkům a zpracování:</strong>
+            <p>NeonPayPulse si z vašich výdělků nebere žádné skryté poplatky. Účtován je pouze poplatek 10 % za zpracování transakce platební bránou. Žádosti o výplatu podléhají manuálnímu schválení a auditu (zpracování do 48 hod).</p>
+        </div>
+
+        <div class="pt-2">
+            <button onclick="requestPayout()" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-heading font-black text-xs rounded-xl transition cursor-pointer shadow-lg shadow-emerald-500/20">
+                Odeslat žádost o výplatu (min. 200 Kč) ➔
+            </button>
+        </div>
+    </div>
+</div>
                 <!-- Nastavení -->
                 <div id="section-settings" class="section space-y-6">
                     <div class="space-y-2">
@@ -876,19 +1103,7 @@
                         <p class="text-sm text-slate-400">Správa údajů tvého profilu, vzhledu a zabezpečení.</p>
                     </div>
 
-                    <!-- Vzhled rozhraní -->
-                    <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-4">
-                        <h3 class="text-base font-heading font-bold text-white">Vzhled rozhraní</h3>
-                        <div class="flex items-center justify-between p-4 bg-slate-950/50 border border-slate-800 rounded-2xl">
-                            <div>
-                                <strong class="text-white text-sm block">Režim zobrazení</strong>
-                                <span class="text-xs text-slate-400">Přepínej mezi tmavým a světlým vzhledem</span>
-                            </div>
-                            <button onclick="toggleTheme()" id="theme-toggle-btn" class="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-heading font-bold text-xs rounded-xl transition cursor-pointer shadow-md">
-                                ☀️ Světlý režim
-                            </button>
-                        </div>
-                    </div>
+                    
 
                     <!-- Zabezpečení a aktivní přihlášení -->
                     <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-4">
@@ -1148,46 +1363,7 @@
 
             </div>
 
-            <!-- PRAVÝ SLOUPCOVÝ PANEL: Aktivita komunity -->
-            <div id="live-sidebar-column" class="xl:col-span-1 transition-all duration-300">
-                <div id="live-panel-container" class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl h-[calc(100vh-5rem)] flex flex-col sticky top-10 transition-all duration-300 overflow-hidden">
-                    
-                    <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
-                        <div class="flex items-center space-x-2" id="live-header-title">
-                            <h3 class="font-heading font-bold text-sm text-white">Aktivita komunity</h3>
-                            <span class="relative flex h-2 w-2" id="live-ping-dot">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                        </div>
-                        
-                        <div class="flex items-center space-x-2">
-                            <span id="live-status-text" class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Aktivní</span>
-                            <button onclick="toggleLiveFeed()" title="Schovat panel" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl flex items-center justify-center text-xs transition cursor-pointer">
-                                ◀
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="live-feed" class="flex-grow overflow-y-auto space-y-3 pr-1 scrollbar-thin">
-                        <div class="notif-item bg-slate-950/70 border border-slate-800/60 p-3.5 rounded-2xl space-y-1">
-                            <div class="flex justify-between items-center text-[10px]">
-                                <span class="text-slate-400 font-semibold">Systém</span>
-                                <span class="text-emerald-400 font-black">+500 coinů</span>
-                            </div>
-                            <p class="text-xs text-slate-300">Vítej v systému NeonPayPulse! Sbírej coiny a sleduj růst výdělku.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Plovoucí tlačítko pro opětovné otevření feedu -->
-            <button onclick="toggleLiveFeed()" id="floating-open-btn" title="Zobrazit aktivitu komunity" class="fixed right-6 top-32 z-30 card-box bg-slate-900/90 border border-slate-700/80 text-slate-300 hover:text-white px-3.5 py-3 rounded-2xl shadow-2xl transition-all hidden items-center justify-center text-xs cursor-pointer backdrop-blur-md hover:border-emerald-500/50">
-                ◀ Zobrazit aktivitu
-            </button>
-
-        </div>
-    </main>
+            
 
     <!-- Modální okno pro potvrzení smazání účtu -->
     <div id="delete-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
@@ -1404,10 +1580,7 @@
                 activeNav.classList.add('active', 'bg-emerald-500/10', 'text-emerald-400', 'border', 'border-emerald-500/20');
             }
 
-            // Pokud je panel ručně schovaný z dřívějška a vrátíme se na home
-            const liveColumn = document.getElementById('live-sidebar-column');
-            const floatingBtn = document.getElementById('floating-open-btn');
-            
+                       
             if (sectionId === 'home') {
                 if (isFeedHidden) {
                     liveColumn.style.display = "none";
@@ -1422,19 +1595,7 @@
             }
         }
 
-        function toggleLiveFeed() {
-            isFeedHidden = !isFeedHidden;
-            const liveColumn = document.getElementById('live-sidebar-column');
-            const floatingBtn = document.getElementById('floating-open-btn');
-
-            if (isFeedHidden) {
-                liveColumn.style.display = "none";
-                if(floatingBtn) floatingBtn.style.display = "flex";
-            } else {
-                liveColumn.style.display = "block";
-                if(floatingBtn) floatingBtn.style.display = "none";
-            }
-        }
+       
 
         function togglePassword(fieldId, btn) {
             const input = document.getElementById(fieldId);
@@ -1549,31 +1710,6 @@
             document.getElementById('contact-message').value = '';
         }
 
-        function addLiveNotif(message, coinAmount, category) {
-            const feed = document.getElementById('live-feed');
-            const div = document.createElement('div');
-            div.className = "notif-item bg-slate-950/70 border border-slate-800/60 p-3.5 rounded-2xl space-y-1";
-            div.innerHTML = `
-                <div class="flex justify-between items-center text-[10px]">
-                    <span class="opacity-60 font-semibold">${category}</span>
-                    <span class="text-emerald-400 font-black">${coinAmount > 0 ? '+' : ''}${coinAmount.toLocaleString()} coinů</span>
-                </div>
-                <p class="text-xs opacity-90">${message}</p>
-            `;
-            feed.prepend(div);
-        }
-
-        setInterval(() => {
-            const events = [
-                { msg: "Uživatel 'Karel_99' se právě zaregistroval pod tvým odkazem!", coins: 200, cat: "Nová registrace" },
-                { msg: "Tvůj referal 'Petra_X' dokončil placený průzkum.", coins: 550, cat: "Provize ze sítě" },
-                { msg: "Uživatel 'Zdenek_Net' kliknul na reklamní kampaň.", coins: 100, cat: "Provize z reklam" },
-                { msg: "Někdo nově vstoupil do 2. úrovně tvé sítě!", coins: 150, cat: "Síť 2. úroveň" }
-            ];
-            const ev = events[Math.floor(Math.random() * events.length)];
-            addLiveNotif(ev.msg, ev.coins, ev.cat);
-        }, 6000);
-
         async function loadUserData() {
             try {
                 const response = await fetch('/api/user', { credentials: 'include' });
@@ -1686,7 +1822,6 @@
             }
             alert('Nastavení typu "' + type + '" bylo uloženo.');
         }
-
         async function logoutUser() {
             try {
                 await fetch('/api/logout', { method: 'POST', credentials: 'include' });
@@ -2532,43 +2667,7 @@
                 activeNav.classList.remove('opacity-70', 'hover:opacity-100', 'hover:bg-slate-800/50');
                 activeNav.classList.add('active', 'bg-emerald-500/10', 'text-emerald-400', 'border', 'border-emerald-500/20');
             }
-
-            const mainContent = document.getElementById('main-content-column');
-            const liveColumn = document.getElementById('live-sidebar-column');
-            const floatingBtn = document.getElementById('floating-open-btn');
-
-            if (sectionId === 'home') {
-                if (!isFeedHidden) {
-                    if(mainContent) mainContent.className = "xl:col-span-2 space-y-6 transition-all duration-300";
-                    if(liveColumn) liveColumn.style.setProperty('display', 'block', 'important');
-                    if(floatingBtn) floatingBtn.style.display = "none";
-                } else {
-                    if(mainContent) mainContent.className = "xl:col-span-3 space-y-6 transition-all duration-300";
-                    if(liveColumn) liveColumn.style.setProperty('display', 'none', 'important');
-                    if(floatingBtn) floatingBtn.style.display = "flex";
-                }
-            } else {
-                if(mainContent) mainContent.className = "xl:col-span-3 space-y-6 transition-all duration-300";
-                if(liveColumn) liveColumn.style.setProperty('display', 'none', 'important');
-                if(floatingBtn) floatingBtn.style.display = "none";
-            }
-        }
-
-        function toggleLiveFeed() {
-            isFeedHidden = !isFeedHidden;
-            const mainContent = document.getElementById('main-content-column');
-            const liveColumn = document.getElementById('live-sidebar-column');
-            const floatingBtn = document.getElementById('floating-open-btn');
-
-            if (isFeedHidden) {
-                mainContent.className = "xl:col-span-3 space-y-6 transition-all duration-300";
-                liveColumn.style.display = "none";
-                if(floatingBtn) floatingBtn.style.display = "flex";
-            } else {
-                mainContent.className = "xl:col-span-2 space-y-6 transition-all duration-300";
-                liveColumn.style.display = "block";
-                if(floatingBtn) floatingBtn.style.display = "none";
-            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function togglePassword(fieldId, btn) {
@@ -2581,7 +2680,6 @@
                 btn.innerText = '👁️';
             }
         }
-
         function openDeleteModal() {
             document.getElementById('delete-modal').classList.remove('hidden');
         }

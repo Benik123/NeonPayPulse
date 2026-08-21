@@ -406,13 +406,15 @@ app.get('/api/user', (req, res) => {
         return res.status(401).json({ success: false, error: 'Nepřihlášen' });
     }
 
-    const user = db.prepare(`SELECT username, email, balance, hasBooster, referralCode FROM users WHERE username = ?`).get(req.session.username);
+    // Přidáno `id`, aby frontend mohl zobrazit unikátní ID uživatele
+    const user = db.prepare(`SELECT id, username, email, balance, hasBooster, referralCode FROM users WHERE username = ?`).get(req.session.username);
 
     if (!user) {
         return res.status(404).json({ success: false, error: 'Uživatel nenalezen' });
     }
     res.json({
         success: true,
+        id: user.id,
         username: user.username,
         email: user.email,
         balance: Number(user.balance.toFixed(2)),
