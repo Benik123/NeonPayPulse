@@ -20,13 +20,11 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 
-// Povolení komunikace odkudkoliv, aby nedocházelo k chybě připojení
 app.use(cors({
     origin: '*',
     credentials: true
 }));
 
-// POKROČILÉ ZABEZPEČENÍ HELMET S POVOLENÝMI INLINE HANDLERY PRO TLAČÍTKA
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -45,14 +43,12 @@ app.use(helmet({
     hidePoweredBy: true
 }));
 
-// OCHRANA PROTI PŘEHLCENÍ SERVERU (Limit velikosti příchozích dat na max 10kb)
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Sessions uloženy v souboru, aby po restartu serveru lidem nevypršelo přihlášení
 app.use(session({
     store: new SQLiteStore({ db: 'sessions.sqlite', dir: __dirname }),
     secret: process.env.SESSION_SECRET || 'tajny_klic_pro_lokal',
@@ -135,12 +131,10 @@ const sensitiveActionLimiter = rateLimit({
 
 db.run('PRAGMA journal_mode = WAL');
 
-// Zachování funkce pro kompatibilitu s tvým kódem
 function saveDatabase() {
     return true;
 }
 
-// Skutečná CSRF ochrana (generování a kontrola tokenů)
 app.use((req, res, next) => {
     if (!req.session.csrfToken) {
         req.session.csrfToken = crypto.randomBytes(32).toString('hex');
@@ -162,7 +156,6 @@ const csrfProtection = (req, res, next) => {
 
 app.use(csrfProtection);
 
-// Endpoint pro poskytnutí CSRF tokenu frontendu
 app.get('/api/csrf-token', (req, res) => {
     res.json({ success: true, csrfToken: req.session.csrfToken });
 });
@@ -178,7 +171,6 @@ app.get('/dashboard.html', (req, res, next) => {
     next();
 });
 
-// ADMINISTRÁTORSKÝ ENDPOINT PRO BEZPEČNOSTNÍ LOGY
 app.get('/api/admin/security-logs', (req, res) => {
     const adminKey = req.headers['x-admin-key'];
     if (!adminKey || adminKey !== (process.env.ADMIN_SECRET || 'tajny_admin_klic')) {
@@ -191,7 +183,6 @@ app.get('/api/admin/security-logs', (req, res) => {
     });
 });
 
-// ZABEZPEČENÝ ENDPOINT PRO KONTAKTNÍ FORMULÁŘ
 app.post('/api/contact', contactLimiter, [
     body('name').trim().escape().notEmpty().withMessage('Chybí jméno.'),
     body('email').isEmail().normalizeEmail().withMessage('Neplatný e-mail.'),
@@ -263,24 +254,30 @@ app.post('/api/register', registerLimiter, [
         const hashedPassword = await bcrypt.hash(password, 10);
         const myRefCode = username + Math.floor(1000 + Math.random() * 9000);
 
-        try {
-            const registerUserTx = db.transaction(() => {
-                db.prepare(`INSERT INTO users (username, email, password, balance, hasBooster, referralCode, referredBy, lastDailyDate, lastClickAd, lastVideo, lastSurvey, lastIp) VALUES (?, ?, ?, 0.00, 0, ?, ?, NULL, 0, 0, 0, ?)`).run( 
-                    username, email, hashedPassword, myRefCode, refCode || null, clientIp
-                );
-            
-                db.prepare(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`).run(username, 'registracia', 0);
-            });
-            registerUserTx();
+        const registerUserTx = db.transaction(() => {
+            db.prepare(`INSERT INTO users (username, email, password, balance, hasBooster, referralCode, referredBy, lastDailyDate, lastClickAd, lastVideo, lastSurvey, lastIp) VALUES (?, ?, ?, 0.00, 0, ?, ?, NULL, 0, 0, 0, ?)`).run( 
+                username, email, hashedPassword, myRefCode, refCode || null, clientIp
+            );
+        
+            db.prepare(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`).run(username, 'registracia', 0);
+        });
+        registerUserTx();
 
-            saveDatabase();
-            req.session.username = username;
-            res.json({ success: true });
-        } catch (err) {
+        saveDatabase();
+        req.session.username = username;
+        res.json({ success: true });
+    } catch (err) {
+        console.error("CHYBA V REGISTRACI:", err.message);
+        if (err.message.includes('UNIQUE constraint failed')) {
+            if (err.message.includes('users.username')) {
+                return res.json({ success: false, error: 'Uživatelské jméno je již obsazené.' });
+            }
+            if (err.message.includes('users.email')) {
+                return res.json({ success: false, error: 'E-mailová adresa je již zaregistrovaná.' });
+            }
             return res.json({ success: false, error: 'Uživatelské jméno nebo email je již obsazený.' });
         }
-    } catch (error) {
-        res.json({ success: false, error: 'Chyba při zpracování hesla.' });
+        return res.json({ success: false, error: 'Chyba databáze: ' + err.message });
     }
 });
 
@@ -407,7 +404,6 @@ app.get('/api/user', (req, res) => {
         return res.status(401).json({ success: false, error: 'Nepřihlášen' });
     }
 
-    // Přidáno `id`, aby frontend mohl zobrazit unikátní ID uživatele
     const user = db.prepare(`SELECT id, username, email, balance, hasBooster, referralCode FROM users WHERE username = ?`).get(req.session.username);
 
     if (!user) {
@@ -424,7 +420,6 @@ app.get('/api/user', (req, res) => {
     });
 });
 
-// ZABEZPEČENÝ ENDPOINT PRO NÁKUP VIP
 app.post('/api/buy-vip', earnLimiter, (req, res) => {
     if (!req.session.username) return res.status(401).json({ success: false, error: 'Nepřihlášen' });
 
@@ -467,7 +462,6 @@ app.post('/api/buy-vip', earnLimiter, (req, res) => {
     }
 });
 
-// BEZPEČNÝ ENDPOINT PRO ŽÁDOST O VÝPLATU
 app.post('/api/request-payout', payoutLimiter, [
     body('method').notEmpty().withMessage('Chybí platební metoda.'),
     body('details').notEmpty().withMessage('Chybí platební údaje.')
