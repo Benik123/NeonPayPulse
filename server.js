@@ -692,7 +692,6 @@ try {
             lastGameTask INTEGER DEFAULT 0,
             lastWebTask INTEGER DEFAULT 0,
             lastRegTask INTEGER DEFAULT 0,
-            lastReviewTask INTEGER DONE DEFAULT 0,
             lastReviewTask INTEGER DEFAULT 0,
             lastSocialTask INTEGER DEFAULT 0,
             lastIp TEXT,
