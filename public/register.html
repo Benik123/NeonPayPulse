@@ -34,7 +34,6 @@
                 <p class="text-xs text-slate-400">Zaregistruj se a začni budovat své portfolio.</p>
             </div>
 
-            <!-- Formulář BEZ onsubmit atributu -->
             <form id="registerForm" class="space-y-4">
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-300">Uživatelské jméno</label>
@@ -56,7 +55,6 @@
                     <input type="text" id="refCode" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition" placeholder="Např. jmeno1234">
                 </div>
 
-                <!-- POVINNÝ SOUHLAS S OBCHODNÍMI PODMÍNKAMI -->
                 <div class="flex items-start space-x-3 pt-2">
                     <input type="checkbox" id="terms" required class="mt-1 w-4 h-4 rounded bg-slate-950 border-slate-800 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-slate-900 cursor-pointer">
                     <label for="terms" class="text-xs text-slate-400 leading-relaxed">
@@ -64,7 +62,6 @@
                     </label>
                 </div>
 
-                <!-- NEVIDITELNÁ PAST NA BOTY (Honeypot) -->
                 <div style="display:none;" aria-hidden="true">
                     <label>Website</label>
                     <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
@@ -110,7 +107,6 @@
                 console.error('Nepodařilo se načíst CSRF token');
             }
 
-            // BEZPEČNÉ NAVÁZÁNÍ ODESÍLÁNÍ FORMULÁŘE (místo onsubmit v HTML)
             const form = document.getElementById('registerForm');
             if (form) {
                 form.addEventListener('submit', handleRegister);
@@ -123,7 +119,7 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const refCode = document.getElementById('refCode').value;
-            const website = document.getElementById('website'].value;
+            const website = document.getElementById('website').value; // OPRAVENO ZDE
             const errorMsg = document.getElementById('error-msg');
 
             errorMsg.classList.add('hidden');
