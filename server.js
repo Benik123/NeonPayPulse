@@ -4,8 +4,8 @@ const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
 const path = require('path');
 const initSqlJs = require('sql.js');
-const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('database.sqlite');
+const Database = require('better-sqlite3');
+const db = new Database('database.sqlite');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
@@ -129,7 +129,7 @@ const sensitiveActionLimiter = rateLimit({
     message: { success: false, error: 'Příliš mnoho požadavků. Zkuste to za chvíli.' }
 });
 
-db.run('PRAGMA journal_mode = WAL');
+db.pragma('journal_mode = WAL');
 
 function saveDatabase() {
     return true;
@@ -177,10 +177,8 @@ app.get('/api/admin/security-logs', (req, res) => {
         return res.status(403).json({ success: false, error: 'Přístup odepřen.' });
     }
 
-    db.all(`SELECT * FROM security_logs ORDER BY id DESC LIMIT 50`, [], (err, logs) => {
-        if (err) return res.status(500).json({ success: false, error: 'Chyba databáze' });
-        res.json({ success: true, logs: logs || [] });
-    });
+    const logs = db.prepare(`SELECT * FROM security_logs ORDER BY id DESC LIMIT 50`).all();
+    res.json({ success: true, logs: logs || [] });
 });
 
 app.post('/api/contact', contactLimiter, [
@@ -694,6 +692,7 @@ try {
             lastGameTask INTEGER DEFAULT 0,
             lastWebTask INTEGER DEFAULT 0,
             lastRegTask INTEGER DEFAULT 0,
+            lastReviewTask INTEGER DONE DEFAULT 0,
             lastReviewTask INTEGER DEFAULT 0,
             lastSocialTask INTEGER DEFAULT 0,
             lastIp TEXT,
