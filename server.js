@@ -47,17 +47,74 @@ app.use(express.static(path.join(__dirname, 'public')));
 const isProduction = process.env.NODE_ENV === 'production';
 
 // --- OPRAVENÉ TRVALÉ ÚLOŽIŠTĚ PRO RAILWAY ---
-// Zjistíme, jestli existuje reálná složka /data (Volume na Railway). Pokud ano, použijeme ji.
-let dataDir = __dirname;
-if (process.env.RAILWAY_VOLUME_MOUNT_PATH) {
-    dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH;
-} else if (fs.existsSync('/data')) {
-    dataDir = '/data';
+let dataDir = '/data';
+if (!fs.existsSync(dataDir)) {
+    dataDir = __dirname; // na lokálu fallback do složky projektu
 }
 
 const dbPath = path.join(dataDir, 'database.sqlite');
 console.log("===> POUŽÍVÁM DATABÁZI NA CESTĚ:", dbPath);
 const db = new sqlite3.Database(dbPath);
+
+// --- OKAMŽITÁ INICIALIZACE TABULEK HNED PO PŘIPOJENÍ ---
+db.exec(`
+    PRAGMA journal_mode = WAL;
+
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        email TEXT UNIQUE,
+        password TEXT,
+        balance REAL DEFAULT 0.00,
+        hasBooster INTEGER DEFAULT 0,
+        referralCode TEXT,
+        referredBy TEXT,
+        lastDailyDate TEXT,
+        lastClickAd INTEGER DEFAULT 0,
+        lastVideo INTEGER DEFAULT 0,
+        lastSurvey INTEGER DEFAULT 0,
+        lastGameTask INTEGER DEFAULT 0,
+        lastWebTask INTEGER DEFAULT 0,
+        lastRegTask INTEGER DEFAULT 0,
+        lastReviewTask INTEGER DEFAULT 0,
+        lastSocialTask INTEGER DEFAULT 0,
+        lastIp TEXT,
+        failedLoginAttempts INTEGER DEFAULT 0,
+        lockUntil DATETIME DEFAULT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        action TEXT,
+        amount REAL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS payouts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        amount REAL,
+        method TEXT,
+        details TEXT,
+        status TEXT DEFAULT 'pending',
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS password_resets (
+        email TEXT,
+        token TEXT,
+        expiresAt DATETIME
+    );
+
+    CREATE TABLE IF NOT EXISTS security_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ip TEXT,
+        event TEXT,
+        details TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+`);
 
 app.use(session({
     store: new SQLiteStore({ 
@@ -73,18 +130,7 @@ app.use(session({
         secure: isProduction,
         sameSite: isProduction ? 'strict' : 'lax'
     }
-}));
-
-app.use((req, res, next) => {
-    if (req.body && typeof req.body === 'object') {
-        for (let key in req.body) {
-            if (Array.isArray(req.body[key])) {
-                req.body[key] = req.body[key][0];
-            }
-        }
-    }
-    next();
-});
+}))
 
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -658,68 +704,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, error: 'Nastala neošetřená chyba na serveru.' });
 });
 
-try {
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            email TEXT UNIQUE,
-            password TEXT,
-            balance REAL DEFAULT 0.00,
-            hasBooster INTEGER DEFAULT 0,
-            referralCode TEXT,
-            referredBy TEXT,
-            lastDailyDate TEXT,
-            lastClickAd INTEGER DEFAULT 0,
-            lastVideo INTEGER DEFAULT 0,
-            lastSurvey INTEGER DEFAULT 0,
-            lastGameTask INTEGER DEFAULT 0,
-            lastWebTask INTEGER DEFAULT 0,
-            lastRegTask INTEGER DEFAULT 0,
-            lastReviewTask INTEGER DEFAULT 0,
-            lastSocialTask INTEGER DEFAULT 0,
-            lastIp TEXT,
-            failedLoginAttempts INTEGER DEFAULT 0,
-            lockUntil DATETIME DEFAULT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT,
-            action TEXT,
-            amount REAL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS payouts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT,
-            amount REAL,
-            method TEXT,
-            details TEXT,
-            status TEXT DEFAULT 'pending',
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS password_resets (
-            email TEXT,
-            token TEXT,
-            expiresAt DATETIME
-        );
-
-        CREATE TABLE IF NOT EXISTS security_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ip TEXT,
-            event TEXT,
-            details TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-    `);
-
-    app.listen(PORT, '0.0.0.0', () => {
-        console.log(`NeonPayPulse server úspěšně běží na adrese: http://0.0.0.0:${PORT}`);
-    });
-
-} catch (err) {
-    console.error('Chyba při inicializaci databáze:', err.message);
-}
+// Spuštění serveru
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`NeonPayPulse server úspěšně běží na adrese: http://0.0.0.0:${PORT}`);
+});
