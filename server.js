@@ -1,3 +1,4 @@
+console.log("TEST: SERVER SE SPUSTIL A TENTO SOUBOR BĚŽÍ!");
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
