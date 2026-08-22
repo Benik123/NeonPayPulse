@@ -210,14 +210,24 @@ app.post('/api/delete-account', sensitiveActionLimiter, async (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.json({ success: false, error: 'Nesprávné heslo.' });
     
-    const deleteAccountTx = db.transaction(() => {
-        db.prepare(`DELETE FROM users WHERE username = ?`).run(req.session.username);
-    });
-    deleteAccountTx();
+    app.post('/api/delete-account', sensitiveActionLimiter, async (req, res) => {
+    if (!req.session.username) return res.status(401).json({ success: false, error: 'Nepřihlášen' });
+    const { password } = req.body;
     
-    saveDatabase();
-    req.session.destroy();
-    res.json({ success: true });
+    db.get(`SELECT password FROM users WHERE username = ?`, [req.session.username], async (err, user) => {
+        if (!user) return res.json({ success: false, error: 'Uživatel nenalezen.' });
+        const match = await bcrypt.compare(password, user.password);
+        if (!match) return res.json({ success: false, error: 'Nesprávné heslo.' });
+        
+        db.run(`DELETE FROM users WHERE username = ?`, [req.session.username], (err) => {
+            if (err) {
+                return res.json({ success: false, error: 'Chyba při mazání účtu.' });
+            }
+            saveDatabase();
+            req.session.destroy();
+            res.json({ success: true });
+        });
+    });
 });
 
 app.post('/api/register', registerLimiter, [
@@ -250,14 +260,11 @@ app.post('/api/register', registerLimiter, [
         const hashedPassword = await bcrypt.hash(password, 10);
         const myRefCode = username + Math.floor(1000 + Math.random() * 9000);
 
-        const registerUserTx = db.transaction(() => {
-            db.prepare(`INSERT INTO users (username, email, password, balance, hasBooster, referralCode, referredBy, lastDailyDate, lastClickAd, lastVideo, lastSurvey, lastIp) VALUES (?, ?, ?, 0.00, 0, ?, ?, NULL, 0, 0, 0, ?)`).run( 
-                username, email, hashedPassword, myRefCode, refCode || null, clientIp
-            );
-        
-            db.prepare(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`).run(username, 'registracia', 0);
-        });
-        registerUserTx();
+        db.prepare(`INSERT INTO users (username, email, password, balance, hasBooster, referralCode, referredBy, lastDailyDate, lastClickAd, lastVideo, lastSurvey, lastIp) VALUES (?, ?, ?, 0.00, 0, ?, ?, NULL, 0, 0, 0, ?)`).run( 
+            username, email, hashedPassword, myRefCode, refCode || null, clientIp
+        );
+    
+        db.prepare(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`).run(username, 'registracia', 0);
 
         saveDatabase();
         req.session.username = username;
@@ -304,12 +311,11 @@ app.post('/api/login', loginLimiter, [
         const failedAttempts = (user.failedLoginAttempts || 0) + 1;
         let lockTime = null;
 
-        const failedLoginTx = db.transaction(() => {
-            if (failedAttempts >= 5) {
+        if (failedAttempts >= 5) {
                 lockTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-                db.prepare(`UPDATE users SET failedLoginAttempts = ?, lockUntil = ? WHERE username = ?`).run(failedAttempts, lockTime, username);
+                db.run(`UPDATE users SET failedLoginAttempts = ?, lockUntil = ? WHERE username = ?`, [failedAttempts, lockTime, username]);
             } else {
-                db.prepare(`UPDATE users SET failedLoginAttempts = ? WHERE username = ?`).run(failedAttempts, username);
+                db.run(`UPDATE users SET failedLoginAttempts = ? WHERE username = ?`, [failedAttempts, username]);
             }
 
             db.prepare(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`).run(clientIp, 'FAILED_LOGIN', `Failed login for: ${username} (Attempt ${failedAttempts})`);
@@ -320,10 +326,7 @@ app.post('/api/login', loginLimiter, [
         return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
     }
 
-    const successLoginTx = db.transaction(() => {
-        db.prepare(`UPDATE users SET lastIp = ?, failedLoginAttempts = 0, lockUntil = NULL WHERE username = ?`).run(clientIp, username);
-    });
-    successLoginTx();
+    db.run(`UPDATE users SET lastIp = ?, failedLoginAttempts = 0, lockUntil = NULL WHERE username = ?`, [clientIp, username]);
 
     saveDatabase();
     req.session.username = username;
@@ -348,10 +351,7 @@ app.post('/api/request-password-reset', resetLimiter, [
     const token = crypto.randomBytes(20).toString('hex');
     const expiresAt = new Date(Date.now() + 3600000).toISOString();
 
-    const resetReqTx = db.transaction(() => {
-        db.prepare(`INSERT INTO password_resets (email, token, expiresAt) VALUES (?, ?, ?)`).run(email, token, expiresAt);
-    });
-    resetReqTx();
+   db.run(`INSERT INTO password_resets (email, token, expiresAt) VALUES (?, ?, ?)`, [email, token, expiresAt]);
     
     saveDatabase();
     res.json({ success: true, message: 'Pokud je e-mail registrován, byl na něj odeslán odkaz pro obnovení.' });
@@ -376,11 +376,8 @@ app.post('/api/reset-password', [
     try {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         
-        const resetPassTx = db.transaction(() => {
-            db.prepare(`UPDATE users SET password = ? WHERE email = ?`).run(hashedPassword, row.email);
-            db.prepare(`DELETE FROM password_resets WHERE token = ?`).run(token);
-        });
-        resetPassTx();
+        db.run(`UPDATE users SET password = ? WHERE email = ?`, [hashedPassword, row.email]);
+        db.run(`DELETE FROM password_resets WHERE token = ?`, [token]);
         
         saveDatabase();
         res.json({ success: true, message: 'Heslo bylo úspěšně změněno! Nyní se můžeš přihlásit.' });
@@ -430,9 +427,7 @@ app.post('/api/buy-vip', earnLimiter, (req, res) => {
 
     const vipPrice = vipPrices[actionType] || 200.00;
 
-    const buyVipTx = db.transaction(() => {
-        const user = db.prepare(`SELECT balance, hasBooster FROM users WHERE username = ?`).get(req.session.username);
-
+   const user = db.get(`SELECT balance, hasBooster FROM users WHERE username = ?`, [req.session.username], (err, user) => {
         if (!user) throw new Error('Uživatel nenalezen.');
         if (user.hasBooster === 1) throw new Error('VIP balíček již máš aktivní!');
         if (user.balance < vipPrice) throw new Error(`Nemáš dostatek peněz. VIP stojí ${vipPrice} Kč, tvůj zůstatek je ${user.balance} Kč.`);
@@ -472,9 +467,7 @@ app.post('/api/request-payout', payoutLimiter, [
     const { method, details } = req.body;
     const minPayoutCzk = 200.00;
 
-    const requestPayoutTx = db.transaction(() => {
-        const user = db.prepare(`SELECT balance FROM users WHERE username = ?`).get(req.session.username);
-
+    const user = db.get(`SELECT balance FROM users WHERE username = ?`, [req.session.username], (err, user) => {
         if (!user) throw new Error('Uživatel nenalezen.');
         if (user.balance < minPayoutCzk) throw new Error(`Minimální částka pro výplatu je 200 Kč. Tvůj zůstatek je ${user.balance.toFixed(2)} Kč.`);
 
@@ -622,13 +615,16 @@ app.post('/api/earn', earnLimiter, (req, res) => {
     const level2Share = Number((baseReward * 0.05).toFixed(2));
     const newBalance = Number((user.balance + userShare).toFixed(2));
 
-    const executeEarnTx = db.transaction(() => {
-        if (actionType === 'daily-bonus') {
+    if (actionType === 'daily-bonus') {
             const todayStr = new Date().toISOString().split('T')[0];
-            db.prepare(`UPDATE users SET lastDailyDate = ?, lastIp = ?, balance = ? WHERE username = ?`).run(todayStr, clientIp, newBalance, req.session.username);
+            db.run(`UPDATE users SET lastDailyDate = ?, lastIp = ?, balance = ? WHERE username = ?`, [todayStr, clientIp, newBalance, req.session.username], (err) => {
+                if (err) console.error("Chyba při aktualizaci denního bonusu:", err);
+            });
         } else {
             const config = configs[actionType];
-            db.prepare(`UPDATE users SET ${config.col} = ?, lastIp = ?, balance = ? WHERE username = ?`).run(now, clientIp, newBalance, req.session.username);
+            db.run(`UPDATE users SET ${config.col} = ?, lastIp = ?, balance = ? WHERE username = ?`, [now, clientIp, newBalance, req.session.username], (err) => {
+                if (err) console.error("Chyba při aktualizaci výdělku:", err);
+            });
         }
 
         db.prepare(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`).run(req.session.username, actionType, userShare);
