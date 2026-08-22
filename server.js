@@ -2,10 +2,12 @@ console.log("TEST: SERVER SE SPUSTIL A TENTO SOUBOR BĚŽÍ!");
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+// Poznámka: connect-sqlite3 obvykle vyžaduje lokální soubor, 
+// ale pro provoz v cloudu na Turso ho pro session můžeme nechat padat do paměti nebo do souboru, 
+// případně ho upravíme. Teď ho tu necháme, aby ti nepadaly importy.
 const SQLiteStore = require('connect-sqlite3')(session);
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
-const fs = require('fs');
+const { createClient } = require('@libsql/client'); // <--- Nová Turso knihovna
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit'); 
@@ -45,77 +47,93 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-const isProduction = process.env.NODE_ENV === 'production';
-
-// --- OPRAVENÉ TRVALÉ ÚLOŽIŠTĚ PRO RAILWAY ---
-let dataDir = '/data';
-if (!fs.existsSync(dataDir)) {
-    dataDir = __dirname; // na lokálu fallback do složky projektu
+// --- PŘIPOJENÍ K TURSO CLOUD DATABÁZI ---
+if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
+    console.error("CHYBA: V proměnných prostředí chybí TURSO_DATABASE_URL nebo TURSO_AUTH_TOKEN!");
 }
 
-const dbPath = path.join(dataDir, 'database.sqlite');
-console.log("===> POUŽÍVÁM DATABÁZI NA CESTĚ:", dbPath);
-const db = new sqlite3.Database(dbPath);
+const db = createClient({
+    url: process.env.TURSO_DATABASE_URL,
+    authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
-// --- OKAMŽITÁ INICIALIZACE TABULEK HNED PO PŘIPOJENÍ ---
-db.exec(`
-    PRAGMA journal_mode = WAL;
+console.log("===> POUŽÍVÁM TURSO CLOUD DATABÁZI");
 
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        email TEXT UNIQUE,
-        password TEXT,
-        balance REAL DEFAULT 0.00,
-        hasBooster INTEGER DEFAULT 0,
-        referralCode TEXT,
-        referredBy TEXT,
-        lastDailyDate TEXT,
-        lastClickAd INTEGER DEFAULT 0,
-        lastVideo INTEGER DEFAULT 0,
-        lastSurvey INTEGER DEFAULT 0,
-        lastGameTask INTEGER DEFAULT 0,
-        lastWebTask INTEGER DEFAULT 0,
-        lastRegTask INTEGER DEFAULT 0,
-        lastReviewTask INTEGER DEFAULT 0,
-        lastSocialTask INTEGER DEFAULT 0,
-        lastIp TEXT,
-        failedLoginAttempts INTEGER DEFAULT 0,
-        lockUntil DATETIME DEFAULT NULL
-    );
+// --- OKAMŽITÁ INICIALIZACE TABULEK V CLOUDU ---
+async function initDatabase() {
+    try {
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE,
+                email TEXT UNIQUE,
+                password TEXT,
+                balance REAL DEFAULT 0.00,
+                hasBooster INTEGER DEFAULT 0,
+                referralCode TEXT,
+                referredBy TEXT,
+                lastDailyDate TEXT,
+                lastClickAd INTEGER DEFAULT 0,
+                lastVideo INTEGER DEFAULT 0,
+                lastSurvey INTEGER DEFAULT 0,
+                lastGameTask INTEGER DEFAULT 0,
+                lastWebTask INTEGER DEFAULT 0,
+                lastRegTask INTEGER DEFAULT 0,
+                lastReviewTask INTEGER DEFAULT 0,
+                lastSocialTask INTEGER DEFAULT 0,
+                lastIp TEXT,
+                failedLoginAttempts INTEGER DEFAULT 0,
+                lockUntil DATETIME DEFAULT NULL
+            );
+        `);
 
-    CREATE TABLE IF NOT EXISTS logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        action TEXT,
-        amount REAL,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT,
+                action TEXT,
+                amount REAL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
 
-    CREATE TABLE IF NOT EXISTS payouts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        amount REAL,
-        method TEXT,
-        details TEXT,
-        status TEXT DEFAULT 'pending',
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS payouts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT,
+                amount REAL,
+                method TEXT,
+                details TEXT,
+                status TEXT DEFAULT 'pending',
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
 
-    CREATE TABLE IF NOT EXISTS password_resets (
-        email TEXT,
-        token TEXT,
-        expiresAt DATETIME
-    );
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS password_resets (
+                email TEXT,
+                token TEXT,
+                expiresAt DATETIME
+            );
+        `);
 
-    CREATE TABLE IF NOT EXISTS security_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        ip TEXT,
-        event TEXT,
-        details TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-`);
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS security_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ip TEXT,
+                event TEXT,
+                details TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+
+        console.log("===> TABULKY V TURSO DATABÁZI BYLY ÚSPĚŠNĚ VYTVOŘENY/OVĚŘENY");
+    } catch (err) {
+        console.error("Chyba při inicializaci tabulek v Turso:", err);
+    }
+}
+
+initDatabase();
 
 app.use(session({
     store: new SQLiteStore({ 
