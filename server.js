@@ -202,7 +202,6 @@ const sensitiveActionLimiter = rateLimit({
     message: { success: false, error: 'Příliš mnoho požadavků. Zkuste to za chvíli.' }
 });
 
-db.run('PRAGMA journal_mode = WAL');
 
 function saveDatabase() {
     return true;
