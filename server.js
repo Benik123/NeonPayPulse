@@ -566,7 +566,7 @@ app.post('/api/earn', earnLimiter, (req, res) => {
     const clientIp = req.ip || 'unknown';
 
     if (website) {
-        db.prepare(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`).run(clientIp, 'BOT_TRAP_EARN', `Earn bot trap triggered by: ${req.session.username}`);
+        db.run(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, [clientIp, 'BOT_TRAP_EARN', `Earn bot trap triggered by: ${req.session.username}`]);
         saveDatabase();
         return res.status(403).json({ success: false, error: 'Detekován podvodný skript.' });
     }
@@ -593,88 +593,76 @@ app.post('/api/earn', earnLimiter, (req, res) => {
     };
 
     if (!configs[actionType]) {
-        db.prepare(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`).run(clientIp, 'INVALID_EARN_ACTION', `User ${req.session.username} tried: ${actionType}`);
+        db.run(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, [clientIp, 'INVALID_EARN_ACTION', `User ${req.session.username} tried: ${actionType}`]);
         saveDatabase();
         return res.json({ success: false, error: 'Neznámá akce.' });
     }
 
-    const user = db.prepare(`SELECT * FROM users WHERE username = ?`).get(req.session.username);
+    db.get(`SELECT * FROM users WHERE username = ?`, [req.session.username], (err, user) => {
+        if (!user) return res.json({ success: false, error: 'Uživatel nenalezen.' });
 
-    if (!user) return res.json({ success: false, error: 'Uživatel nenalezen.' });
-
-    if (actionType === 'daily-bonus') {
-        const todayStr = new Date().toISOString().split('T')[0];
-        if (user.lastDailyDate === todayStr) {
-            return res.json({ success: false, error: 'Denní bonus sis již dnes vyzvedl! Přijď zase zítra po půlnoci.' });
-        }
-    } else {
-        const config = configs[actionType];
-        const lastTime = user[config.col] || 0;
-        const elapsedSeconds = (now - lastTime) / 1000;
-
-        if (elapsedSeconds < config.cooldown) {
-            const waitTime = Math.ceil(config.cooldown - elapsedSeconds);
-            return res.json({ success: false, error: `Příliš brzy! Počkej ještě ${waitTime} sekund.` });
-        }
-    }
-
-    let baseReward = configs[actionType].reward;
-    if (user.hasBooster === 1) {
-        baseReward *= 2; 
-    }
-
-    const userShare = Number((baseReward * 0.50).toFixed(2));
-    const level1Share = Number((baseReward * 0.10).toFixed(2));
-    const level2Share = Number((baseReward * 0.05).toFixed(2));
-    const newBalance = Number((user.balance + userShare).toFixed(2));
-
-    if (actionType === 'daily-bonus') {
+        if (actionType === 'daily-bonus') {
             const todayStr = new Date().toISOString().split('T')[0];
-            db.run(`UPDATE users SET lastDailyDate = ?, lastIp = ?, balance = ? WHERE username = ?`, [todayStr, clientIp, newBalance, req.session.username], (err) => {
-                if (err) console.error("Chyba při aktualizaci denního bonusu:", err);
-            });
+            if (user.lastDailyDate === todayStr) {
+                return res.json({ success: false, error: 'Denní bonus sis již dnes vyzvedl! Přijď zase zítra po půlnoci.' });
+            }
         } else {
             const config = configs[actionType];
-            db.run(`UPDATE users SET ${config.col} = ?, lastIp = ?, balance = ? WHERE username = ?`, [now, clientIp, newBalance, req.session.username], (err) => {
-                if (err) console.error("Chyba při aktualizaci výdělku:", err);
+            const lastTime = user[config.col] || 0;
+            const elapsedSeconds = (now - lastTime) / 1000;
+
+            if (elapsedSeconds < config.cooldown) {
+                const waitTime = Math.ceil(config.cooldown - elapsedSeconds);
+                return res.json({ success: false, error: `Příliš brzy! Počkej ještě ${waitTime} sekund.` });
+            }
+        }
+
+        let baseReward = configs[actionType].reward;
+        if (user.hasBooster === 1) {
+            baseReward *= 2; 
+        }
+
+        const userShare = Number((baseReward * 0.50).toFixed(2));
+        const level1Share = Number((baseReward * 0.10).toFixed(2));
+        const level2Share = Number((baseReward * 0.05).toFixed(2));
+        const newBalance = Number((user.balance + userShare).toFixed(2));
+
+        if (actionType === 'daily-bonus') {
+            const todayStr = new Date().toISOString().split('T')[0];
+            db.run(`UPDATE users SET lastDailyDate = ?, lastIp = ?, balance = ? WHERE username = ?`, [todayStr, clientIp, newBalance, req.session.username]);
+        } else {
+            const config = configs[actionType];
+            db.run(`UPDATE users SET ${config.col} = ?, lastIp = ?, balance = ? WHERE username = ?`, [now, clientIp, newBalance, req.session.username]);
+        }
+
+        db.run(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`, [req.session.username, actionType, userShare]);
+
+        if (user.referredBy) {
+            db.get(`SELECT username, balance, referredBy FROM users WHERE referralCode = ?`, [user.referredBy], (err, level1User) => {
+                if (level1User) {
+                    const newL1Balance = Number((level1User.balance + level1Share).toFixed(2));
+                    db.run(`UPDATE users SET balance = ? WHERE username = ?`, [newL1Balance, level1User.username]);
+
+                    if (level1User.referredBy) {
+                        db.get(`SELECT username, balance FROM users WHERE referralCode = ?`, [level1User.referredBy], (err, level2User) => {
+                            if (level2User) {
+                                const newL2Balance = Number((level2User.balance + level2Share).toFixed(2));
+                                db.run(`UPDATE users SET balance = ? WHERE username = ?`, [newL2Balance, level2User.username]);
+                            }
+                        });
+                    }
+                }
             });
         }
 
-        db.prepare(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`).run(req.session.username, actionType, userShare);
-
-        if (user.referredBy) {
-            const level1User = db.prepare(`SELECT username, balance, referredBy FROM users WHERE referralCode = ?`).get(user.referredBy);
-
-            if (level1User) {
-                const newL1Balance = Number((level1User.balance + level1Share).toFixed(2));
-                db.prepare(`UPDATE users SET balance = ? WHERE username = ?`).run(newL1Balance, level1User.username);
-
-                if (level1User.referredBy) {
-                    const level2User = db.prepare(`SELECT username, balance FROM users WHERE referralCode = ?`).get(level1User.referredBy);
-
-                    if (level2User) {
-                        const newL2Balance = Number((level2User.balance + level2Share).toFixed(2));
-                        db.prepare(`UPDATE users SET balance = ? WHERE username = ?`).run(newL2Balance, level2User.username);
-                    }
-                }
-            }
-        }
-    });
-
-    try {
-        executeEarnTx();
         saveDatabase();
-    } catch (err) {
-        console.error('Chyba při transakci earn:', err);
-        return res.status(500).json({ success: false, error: 'Chyba serveru při zpracování odměny.' });
-    }
-
-    res.json({
-        success: true,
-        newBalance: newBalance,
-        message: `${configs[actionType].message} Získáváš ${userShare} Kč.`
+        return res.json({
+            success: true,
+            newBalance: newBalance,
+            message: `${configs[actionType].message} Získáváš ${userShare} Kč.`
+        });
     });
-
+});
 
 app.use((err, req, res, next) => {
     console.error('[NEOŠETŘENÁ CHYBA]', err.stack);
