@@ -376,7 +376,7 @@ app.post('/api/register', registerLimiter, [
 app.post('/api/login', loginLimiter, [
     body('username').trim().escape().notEmpty().withMessage('Zadej uživatelské jméno.'),
     body('password').notEmpty().withMessage('Zadej heslo.')
-], (req, res) => {
+], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.json({ success: false, error: errors.array()[0].msg });
@@ -385,7 +385,13 @@ app.post('/api/login', loginLimiter, [
     const { username, password } = req.body;
     const clientIp = req.ip || 'unknown';
 
-    db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user) => {
+    try {
+        const result = await db.execute({ 
+            sql: `SELECT * FROM users WHERE username = ?`, 
+            args: [username] 
+        });
+        const user = result.rows[0];
+
         if (!user) {
             return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
         }
@@ -401,23 +407,36 @@ app.post('/api/login', loginLimiter, [
 
             if (failedAttempts >= 5) {
                 lockTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-                db.run(`UPDATE users SET failedLoginAttempts = ?, lockUntil = ? WHERE username = ?`, [failedAttempts, lockTime, username]);
+                await db.execute({ 
+                    sql: `UPDATE users SET failedLoginAttempts = ?, lockUntil = ? WHERE username = ?`, 
+                    args: [failedAttempts, lockTime, username] 
+                });
             } else {
-                db.run(`UPDATE users SET failedLoginAttempts = ? WHERE username = ?`, [failedAttempts, username]);
+                await db.execute({ 
+                    sql: `UPDATE users SET failedLoginAttempts = ? WHERE username = ?`, 
+                    args: [failedAttempts, username] 
+                });
             }
 
-            db.run(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, [clientIp, 'FAILED_LOGIN', `Failed login for: ${username} (Attempt ${failedAttempts})`]);
+            await db.execute({ 
+                sql: `INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, 
+                args: [clientIp, 'FAILED_LOGIN', `Failed login for: ${username} (Attempt ${failedAttempts})`] 
+            });
             
-            saveDatabase();
             return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
         }
 
-        db.run(`UPDATE users SET lastIp = ?, failedLoginAttempts = 0, lockUntil = NULL WHERE username = ?`, [clientIp, username], () => {
-            saveDatabase();
-            req.session.username = username;
-            res.json({ success: true });
+        await db.execute({ 
+            sql: `UPDATE users SET lastIp = ?, failedLoginAttempts = 0, lockUntil = NULL WHERE username = ?`, 
+            args: [clientIp, username] 
         });
-    });
+
+        req.session.username = username;
+        res.json({ success: true });
+    } catch (err) {
+        console.error("CHYBA V LOGINU:", err.message);
+        return res.json({ success: false, error: 'Chyba serveru při přihlašování.' });
+    }
 });
 
 app.post('/api/reset-password', [
