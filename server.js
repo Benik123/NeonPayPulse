@@ -406,34 +406,50 @@ app.post('/api/login', loginLimiter, [
             return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
         }
 
-        db.run(`UPDATE users SET lastIp = ?, failedLoginAttempts = 0, lockUntil = NULL WHERE username = ?`, [clientIp, username], () => {
-            saveDatabase();
-            req.session.username = username;
-            res.json({ success: true });
-        });
-    });
-});
-
-app.post('/api/request-password-reset', resetLimiter, [
-    body('email').isEmail().normalizeEmail().withMessage('Zadej platnou emailovou adresu.')
+        app.post('/api/login', loginLimiter, [
+    body('username').trim().escape().notEmpty().withMessage('Zadej uživatelské jméno.'),
+    body('password').notEmpty().withMessage('Zadej heslo.')
 ], (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.json({ success: false, error: errors.array()[0].msg });
     }
 
-    const { email } = req.body;
-    db.get(`SELECT username FROM users WHERE email = ?`, [email], (err, user) => {
+    const { username, password } = req.body;
+    const clientIp = req.ip || 'unknown';
+
+    db.execute({ sql: `SELECT * FROM users WHERE username = ?`, args: [username] }).then(async (result) => {
+        const user = result.rows[0];
         if (!user) {
-            return res.json({ success: true, message: 'Pokud je e-mail registrován, byl na něj odeslán odkaz pro obnovení.' });
+            return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
         }
 
-        const token = crypto.randomBytes(20).toString('hex');
-        const expiresAt = new Date(Date.now() + 3600000).toISOString();
+        if (user.lockUntil && new Date(user.lockUntil) > new Date()) {
+            return res.status(429).json({ success: false, error: 'Účet je dočasně uzamčen kvůli příliš mnoha neúspěšným pokusům. Zkuste to za 15 minut.' });
+        }
 
-        db.run(`INSERT INTO password_resets (email, token, expiresAt) VALUES (?, ?, ?)`, [email, token, expiresAt], () => {
+        const match = await bcrypt.compare(password, user.password);
+        if (!match) {
+            const failedAttempts = (user.failedLoginAttempts || 0) + 1;
+            let lockTime = null;
+
+            if (failedAttempts >= 5) {
+                lockTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+                await db.execute({ sql: `UPDATE users SET failedLoginAttempts = ?, lockUntil = ? WHERE username = ?`, args: [failedAttempts, lockTime, username] });
+            } else {
+                await db.execute({ sql: `UPDATE users SET failedLoginAttempts = ? WHERE username = ?`, args: [failedAttempts, username] });
+            }
+
+            await db.execute({ sql: `INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, args: [clientIp, 'FAILED_LOGIN', `Failed login for: ${username} (Attempt ${failedAttempts})`] });
+            
             saveDatabase();
-            res.json({ success: true, message: 'Pokud je e-mail registrován, byl na něj odeslán odkaz pro obnovení.' });
+            return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
+        }
+
+        db.execute({ sql: `UPDATE users SET lastIp = ?, failedLoginAttempts = 0, lockUntil = NULL WHERE username = ?`, args: [clientIp, username] }).then(() => {
+            saveDatabase();
+            req.session.username = username;
+            res.json({ success: true });
         });
     });
 });
