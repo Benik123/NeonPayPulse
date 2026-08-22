@@ -315,15 +315,24 @@ app.post('/api/register', registerLimiter, [
     const clientIp = req.ip || 'unknown';
 
     if (website) {
-        db.prepare(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`).run(clientIp, 'BOT_DETECTED', `Registration bot trap triggered`);
-        saveDatabase();
+        await db.execute({
+            sql: `INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`,
+            args: [clientIp, 'BOT_DETECTED', `Registration bot trap triggered`]
+        });
         return res.status(403).json({ success: false, error: 'Detekován bot.' });
     }
 
-    const ipCheck = db.prepare(`SELECT COUNT(*) as count FROM users WHERE lastIp = ?`).get(clientIp);
+    const ipCheckRes = await db.execute({
+        sql: `SELECT COUNT(*) as count FROM users WHERE lastIp = ?`,
+        args: [clientIp]
+    });
+    const ipCheck = ipCheckRes.rows[0];
+
     if (ipCheck && ipCheck.count >= 3) {
-        db.prepare(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`).run(clientIp, 'MULTI_ACCOUNT_BLOCK', `Too many accounts from IP: ${clientIp}`);
-        saveDatabase();
+        await db.execute({
+            sql: `INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`,
+            args: [clientIp, 'MULTI_ACCOUNT_BLOCK', `Too many accounts from IP: ${clientIp}`]
+        });
         return res.status(403).json({ success: false, error: 'Z této IP adresy již bylo zaregistrováno maximální množství účtů.' });
     }
 
@@ -331,22 +340,25 @@ app.post('/api/register', registerLimiter, [
         const hashedPassword = await bcrypt.hash(password, 10);
         const myRefCode = username + Math.floor(1000 + Math.random() * 9000);
 
-        db.prepare(`INSERT INTO users (username, email, password, balance, hasBooster, referralCode, referredBy, lastDailyDate, lastClickAd, lastVideo, lastSurvey, lastIp) VALUES (?, ?, ?, 0.00, 0, ?, ?, NULL, 0, 0, 0, ?)`).run( 
-            username, email, hashedPassword, myRefCode, refCode || null, clientIp
-        );
+        await db.execute({
+            sql: `INSERT INTO users (username, email, password, balance, hasBooster, referralCode, referredBy, lastDailyDate, lastClickAd, lastVideo, lastSurvey, lastIp) VALUES (?, ?, ?, 0.00, 0, ?, ?, NULL, 0, 0, 0, ?)`,
+            args: [username, email, hashedPassword, myRefCode, refCode || null, clientIp]
+        });
     
-        db.prepare(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`).run(username, 'registracia', 0);
+        await db.execute({
+            sql: `INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`,
+            args: [username, 'registracia', 0]
+        });
 
-        saveDatabase();
         req.session.username = username;
         res.json({ success: true });
     } catch (err) {
         console.error("CHYBA V REGISTRACI:", err.message);
         if (err.message.includes('UNIQUE constraint failed')) {
-            if (err.message.includes('users.username')) {
+            if (err.message.includes('username')) {
                 return res.json({ success: false, error: 'Uživatelské jméno je již obsazené.' });
             }
-            if (err.message.includes('users.email')) {
+            if (err.message.includes('email')) {
                 return res.json({ success: false, error: 'E-mailová adresa je již zaregistrovaná.' });
             }
             return res.json({ success: false, error: 'Uživatelské jméno nebo email je již obsazený.' });
