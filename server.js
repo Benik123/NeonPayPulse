@@ -47,10 +47,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 const isProduction = process.env.NODE_ENV === 'production';
 
 // --- TRVALÉ ÚLOŽIŠTĚ (VOLUME) PRO RAILWAY ---
-const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || __dirname;
+// Zde zajistíme, že pokud existuje složka /data (Volume na Railway), použije se. Jinak se použije lokální složka.
+let dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || '/data';
+if (!fs.existsSync(dataDir)) {
+    dataDir = __dirname;
+}
+
 const dbPath = path.join(dataDir, 'database.sqlite');
 const db = new sqlite3.Database(dbPath);
 
+// Jediná a správná inicializace session (duplicitní blok byl odstraněn)
 app.use(session({
     store: new SQLiteStore({ 
         db: 'sessions.sqlite', 
@@ -63,19 +69,6 @@ app.use(session({
         maxAge: 24 * 60 * 60 * 1000,
         httpOnly: true,
         secure: isProduction,
-        sameSite: isProduction ? 'strict' : 'lax'
-    }
-}));
-
-app.use(session({
-    store: new SQLiteStore({ db: 'sessions.sqlite', dir: __dirname }),
-    secret: process.env.SESSION_SECRET || 'tajny_klic_pro_lokal',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-        maxAge: 24 * 60 * 60 * 1000,
-        httpOnly: true,
-        secure:isProduction,
         sameSite: isProduction ? 'strict' : 'lax'
     }
 }));
@@ -98,7 +91,6 @@ const loginLimiter = rateLimit({
     legacyHeaders: false,
     message: { success: false, error: 'Příliš mnoho neúspěšných pokusů o přihlášení. Zkuste to prosím za 15 minut.' }
 });
-
 const registerLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 5,
