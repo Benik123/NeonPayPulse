@@ -136,20 +136,16 @@ async function initDatabase() {
 initDatabase();
 
 app.use(session({
-    store: new SQLiteStore({ 
-        db: 'sessions.sqlite', 
-        dir: dataDir 
-    }),
     secret: process.env.SESSION_SECRET || 'tajny_klic_pro_lokal',
     resave: false,
     saveUninitialized: false,
     cookie: { 
         maxAge: 24 * 60 * 60 * 1000,
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'strict' : 'lax'
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
     }
-}))
+}));
 
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
