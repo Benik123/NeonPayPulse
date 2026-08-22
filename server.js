@@ -311,15 +311,14 @@ app.post('/api/login', loginLimiter, [
         const failedAttempts = (user.failedLoginAttempts || 0) + 1;
         let lockTime = null;
 
-        if (failedAttempts >= 5) {
+       if (failedAttempts >= 5) {
                 lockTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
                 db.run(`UPDATE users SET failedLoginAttempts = ?, lockUntil = ? WHERE username = ?`, [failedAttempts, lockTime, username]);
             } else {
                 db.run(`UPDATE users SET failedLoginAttempts = ? WHERE username = ?`, [failedAttempts, username]);
             }
 
-            db.prepare(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`).run(clientIp, 'FAILED_LOGIN', `Failed login for: ${username} (Attempt ${failedAttempts})`);
-            failedLoginTx();
+            db.run(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, [clientIp, 'FAILED_LOGIN', `Failed login for: ${username} (Attempt ${failedAttempts})`]);
         
         saveDatabase();
         return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
@@ -341,19 +340,19 @@ app.post('/api/request-password-reset', resetLimiter, [
     }
 
     const { email } = req.body;
-    const user = db.prepare(`SELECT username FROM users WHERE email = ?`).get(email);
+    db.get(`SELECT username FROM users WHERE email = ?`, [email], (err, user) => {
+        if (!user) {
+            return res.json({ success: true, message: 'Pokud je e-mail registrován, byl na něj odeslán odkaz pro obnovení.' });
+        }
 
-    if (!user) {
-        return res.json({ success: true, message: 'Pokud je e-mail registrován, byl na něj odeslán odkaz pro obnovení.' });
-    }
+        const token = crypto.randomBytes(20).toString('hex');
+        const expiresAt = new Date(Date.now() + 3600000).toISOString();
 
-    const token = crypto.randomBytes(20).toString('hex');
-    const expiresAt = new Date(Date.now() + 3600000).toISOString();
-
-   db.run(`INSERT INTO password_resets (email, token, expiresAt) VALUES (?, ?, ?)`, [email, token, expiresAt]);
-    
-    saveDatabase();
-    res.json({ success: true, message: 'Pokud je e-mail registrován, byl na něj odeslán odkaz pro obnovení.' });
+        db.run(`INSERT INTO password_resets (email, token, expiresAt) VALUES (?, ?, ?)`, [email, token, expiresAt], () => {
+            saveDatabase();
+            res.json({ success: true, message: 'Pokud je e-mail registrován, byl na něj odeslán odkaz pro obnovení.' });
+        });
+    });
 });
 
 app.post('/api/reset-password', [
@@ -366,23 +365,23 @@ app.post('/api/reset-password', [
     }
 
     const { token, newPassword } = req.body;
-    const row = db.prepare(`SELECT * FROM password_resets WHERE token = ? AND expiresAt > ?`).get(token, new Date().toISOString());
+    db.get(`SELECT * FROM password_resets WHERE token = ? AND expiresAt > ?`, [token, new Date().toISOString()], async (err, row) => {
+        if (!row) {
+            return res.json({ success: false, error: 'Neplatný nebo již vypršený token pro obnovu hesla.' });
+        }
 
-    if (!row) {
-        return res.json({ success: false, error: 'Neplatný nebo již vypršený token pro obnovu hesla.' });
-    }
-
-    try {
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        
-        db.run(`UPDATE users SET password = ? WHERE email = ?`, [hashedPassword, row.email]);
-        db.run(`DELETE FROM password_resets WHERE token = ?`, [token]);
-        
-        saveDatabase();
-        res.json({ success: true, message: 'Heslo bylo úspěšně změněno! Nyní se můžeš přihlásit.' });
-    } catch (error) {
-        res.json({ success: false, error: 'Chyba při zpracování nového hesla.' });
-    }
+        try {
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            
+            db.run(`UPDATE users SET password = ? WHERE email = ?`, [hashedPassword, row.email]);
+            db.run(`DELETE FROM password_resets WHERE token = ?`, [token], () => {
+                saveDatabase();
+                res.json({ success: true, message: 'Heslo bylo úspěšně změněno! Nyní se můžeš přihlásit.' });
+            });
+        } catch (error) {
+            res.json({ success: false, error: 'Chyba při zpracování nového hesla.' });
+        }
+    });
 });
 
 app.post('/api/logout', (req, res) => {
@@ -426,19 +425,30 @@ app.post('/api/buy-vip', earnLimiter, (req, res) => {
 
     const vipPrice = vipPrices[actionType] || 200.00;
 
-   const user = db.get(`SELECT balance, hasBooster FROM users WHERE username = ?`, [req.session.username], (err, user) => {
-        if (!user) throw new Error('Uživatel nenalezen.');
-        if (user.hasBooster === 1) throw new Error('VIP balíček již máš aktivní!');
-        if (user.balance < vipPrice) throw new Error(`Nemáš dostatek peněz. VIP stojí ${vipPrice} Kč, tvůj zůstatek je ${user.balance} Kč.`);
+    db.get(`SELECT balance, hasBooster FROM users WHERE username = ?`, [req.session.username], (err, user) => {
+        if (!user) {
+            return res.json({ success: false, error: 'Uživatel nenalezen.' });
+        }
+        if (user.hasBooster === 1) {
+            return res.json({ success: false, error: 'VIP balíček již máš aktivní!' });
+        }
+        if (user.balance < vipPrice) {
+            return res.json({ success: false, error: `Nemáš dostatek peněz. VIP stojí ${vipPrice} Kč, tvůj zůstatek je ${user.balance} Kč.` });
+        }
 
         const newBalance = Number((user.balance - vipPrice).toFixed(2));
 
-        db.prepare(`UPDATE users SET balance = ?, hasBooster = 1 WHERE username = ?`).run(newBalance, req.session.username);
-        db.prepare(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`).run(req.session.username, 'nákup-vip', -vipPrice);
-        
-        return newBalance;
+        db.run(`UPDATE users SET balance = ?, hasBooster = 1 WHERE username = ?`, [newBalance, req.session.username]);
+        db.run(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`, [req.session.username, 'nákup-vip', -vipPrice], () => {
+            saveDatabase();
+            res.json({
+                success: true,
+                newBalance: newBalance,
+                message: 'Gratuluji! VIP balíček byl úspěšně aktivován.'
+            });
+        });
     });
-
+});
     try {
         const newBalance = buyVipTx();
         saveDatabase();
@@ -466,25 +476,29 @@ app.post('/api/request-payout', payoutLimiter, [
     const { method, details } = req.body;
     const minPayoutCzk = 200.00;
 
-    const user = db.get(`SELECT balance FROM users WHERE username = ?`, [req.session.username], (err, user) => {
-        if (!user) throw new Error('Uživatel nenalezen.');
-        if (user.balance < minPayoutCzk) throw new Error(`Minimální částka pro výplatu je 200 Kč. Tvůj zůstatek je ${user.balance.toFixed(2)} Kč.`);
+    db.get(`SELECT balance FROM users WHERE username = ?`, [req.session.username], (err, user) => {
+        if (!user) {
+            return res.json({ success: false, error: 'Uživatel nenalezen.' });
+        }
+        if (user.balance < minPayoutCzk) {
+            return res.json({ success: false, error: `Minimální částka pro výplatu je 200 Kč. Tvůj zůstatek je ${user.balance.toFixed(2)} Kč.` });
+        }
 
         const payoutAmount = Number(user.balance.toFixed(2));
         const newBalance = 0.00;
 
-        db.prepare(`UPDATE users SET balance = ? WHERE username = ?`).run(newBalance, req.session.username);
-
-        db.prepare(`INSERT INTO payouts (username, amount, method, details, status) VALUES (?, ?, ?, ?, 'pending')`).run(
-            req.session.username, payoutAmount, method, details
-        );
-
-        db.prepare(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`).run(
-            req.session.username, 'vyplata-zadost', -payoutAmount
-        );
-
-        return newBalance;
+        db.run(`UPDATE users SET balance = ? WHERE username = ?`, [newBalance, req.session.username]);
+        db.run(`INSERT INTO payouts (username, amount, method, details, status) VALUES (?, ?, ?, ?, 'pending')`, [req.session.username, payoutAmount, method, details]);
+        db.run(`INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`, [req.session.username, 'vyplata-zadost', -payoutAmount], () => {
+            saveDatabase();
+            res.json({
+                success: true,
+                newBalance: newBalance,
+                message: 'Žádost o výplatu byla úspěšně odeslána k ručnímu auditu!'
+            });
+        });
     });
+});
 
     try {
         const newBalance = requestPayoutTx();
