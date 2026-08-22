@@ -3,7 +3,6 @@ const express = require('express');
 const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
 const path = require('path');
-const initSqlJs = require('sql.js');
 const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('database.sqlite');
 const fs = require('fs');
@@ -19,7 +18,6 @@ const PORT = process.env.PORT || 3000;
 
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
-
 app.use(cors({
     origin: '*',
     credentials: true
