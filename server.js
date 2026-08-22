@@ -53,8 +53,8 @@ if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
 }
 
 const db = createClient({
-    url: process.env.TURSO_DATABASE_URL,
-    authToken: process.env.TURSO_AUTH_TOKEN,
+    url: process.env.TURSO_DATABASE_URL || "libsql://neonpaypulse-ben123.aws-ap-northeast-1.turso.io",
+    authToken: process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjIwMzE2ODAzMjcsImlhdCI6MTc4NzQyNzUyNywiaWQiOiIwMWEwMmFmOS00ZTAxLTcwZWYtOTA2My01ZDM0NjQ1NGU1Y2EiLCJraWQiOiJzMFM1OWZLYkk0d3V3VGdwdDNCMmpPRmVxY19ZNmRfajYwZEFVcDBlcUd3IiwicmlkIjoiOWUyMjFhNzMtM2MyNy00M2MxLWJhYWItODY0NjA5MzUyYjc3In0.q595-uJfP4jYLqAAEIagHt4WvX3HliPWvCoksv8TBKqy8o6Nw54lsnC38zkS-VPon0taPliOxnDCHTmS0omdAw",
 });
 
 console.log("===> POUŽÍVÁM TURSO CLOUD DATABÁZI");
