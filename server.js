@@ -319,8 +319,7 @@ app.post('/api/login', loginLimiter, [
             }
 
             db.prepare(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`).run(clientIp, 'FAILED_LOGIN', `Failed login for: ${username} (Attempt ${failedAttempts})`);
-        });
-        failedLoginTx();
+            failedLoginTx();
         
         saveDatabase();
         return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
