@@ -55,7 +55,7 @@ app.use(session({
     cookie: { 
         maxAge: 24 * 60 * 60 * 1000,
         httpOnly: true,
-        secure: false,
+        secure:isProduction,
         sameSite: isProduction ? 'strict' : 'lax'
     }
 }));
