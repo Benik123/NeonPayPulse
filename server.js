@@ -4,7 +4,6 @@ const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('database.sqlite');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
@@ -46,6 +45,27 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const isProduction = process.env.NODE_ENV === 'production';
+
+// --- TRVALÉ ÚLOŽIŠTĚ (VOLUME) PRO RAILWAY ---
+const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || __dirname;
+const dbPath = path.join(dataDir, 'database.sqlite');
+const db = new sqlite3.Database(dbPath);
+
+app.use(session({
+    store: new SQLiteStore({ 
+        db: 'sessions.sqlite', 
+        dir: dataDir 
+    }),
+    secret: process.env.SESSION_SECRET || 'tajny_klic_pro_lokal',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+        maxAge: 24 * 60 * 60 * 1000,
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'strict' : 'lax'
+    }
+}));
 
 app.use(session({
     store: new SQLiteStore({ db: 'sessions.sqlite', dir: __dirname }),
