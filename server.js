@@ -509,7 +509,7 @@ app.post('/api/request-payout', payoutLimiter, [
             message: 'Žádost o výplatu byla úspěšně odeslána k ručnímu auditu!'
         });
     } catch (err) {
-        res.json({ success: false, error: err.message });
+    
     }
 
 
