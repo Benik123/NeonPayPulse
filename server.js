@@ -674,7 +674,7 @@ app.post('/api/earn', earnLimiter, (req, res) => {
         newBalance: newBalance,
         message: `${configs[actionType].message} Získáváš ${userShare} Kč.`
     });
-});
+
 
 app.use((err, req, res, next) => {
     console.error('[NEOŠETŘENÁ CHYBA]', err.stack);
