@@ -55,7 +55,7 @@ app.use(session({
     cookie: { 
         maxAge: 24 * 60 * 60 * 1000,
         httpOnly: true,
-        secure: isProduction,
+        secure: false,
         sameSite: isProduction ? 'strict' : 'lax'
     }
 }));
@@ -201,33 +201,30 @@ app.post('/api/contact', contactLimiter, [
 });
 
 app.post('/api/delete-account', sensitiveActionLimiter, async (req, res) => {
-    if (!req.session.username) return res.status(401).json({ success: false, error: 'Nepřihlášen' });
-    const { password } = req.body;
+    if (!req.session.username) {
+        return res.status(401).json({ success: false, error: 'Nepřihlášen' });
+    }
     
+    const { password } = req.body;
     const user = db.prepare(`SELECT password FROM users WHERE username = ?`).get(req.session.username);
 
-    if (!user) return res.json({ success: false, error: 'Uživatel nenalezen.' });
+    if (!user) {
+        return res.json({ success: false, error: 'Uživatel nenalezen.' });
+    }
+
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.json({ success: false, error: 'Nesprávné heslo.' });
-    
-    app.post('/api/delete-account', sensitiveActionLimiter, async (req, res) => {
-    if (!req.session.username) return res.status(401).json({ success: false, error: 'Nepřihlášen' });
-    const { password } = req.body;
-    
-    db.get(`SELECT password FROM users WHERE username = ?`, [req.session.username], async (err, user) => {
-        if (!user) return res.json({ success: false, error: 'Uživatel nenalezen.' });
-        const match = await bcrypt.compare(password, user.password);
-        if (!match) return res.json({ success: false, error: 'Nesprávné heslo.' });
-        
-        db.run(`DELETE FROM users WHERE username = ?`, [req.session.username], (err) => {
-            if (err) {
-                return res.json({ success: false, error: 'Chyba při mazání účtu.' });
-            }
-            saveDatabase();
-            req.session.destroy();
-            res.json({ success: true });
-        });
-    });
+    if (!match) {
+        return res.json({ success: false, error: 'Nesprávné heslo.' });
+    }
+
+    try {
+        db.prepare(`DELETE FROM users WHERE username = ?`).run(req.session.username);
+        saveDatabase();
+        req.session.destroy();
+        res.json({ success: true });
+    } catch (err) {
+        res.json({ success: false, error: 'Chyba při mazání účtu.' });
+    }
 });
 
 app.post('/api/register', registerLimiter, [
@@ -287,7 +284,7 @@ app.post('/api/register', registerLimiter, [
 app.post('/api/login', loginLimiter, [
     body('username').trim().escape().notEmpty().withMessage('Zadej uživatelské jméno.'),
     body('password').notEmpty().withMessage('Zadej heslo.')
-], async (req, res) => {
+], (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.json({ success: false, error: errors.array()[0].msg });
@@ -296,22 +293,21 @@ app.post('/api/login', loginLimiter, [
     const { username, password } = req.body;
     const clientIp = req.ip || 'unknown';
 
-    const user = db.prepare(`SELECT * FROM users WHERE username = ?`).get(username);
+    db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user) => {
+        if (!user) {
+            return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
+        }
 
-    if (!user) {
-        return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
-    }
+        if (user.lockUntil && new Date(user.lockUntil) > new Date()) {
+            return res.status(429).json({ success: false, error: 'Účet je dočasně uzamčen kvůli příliš mnoha neúspěšným pokusům. Zkuste to za 15 minut.' });
+        }
 
-    if (user.lockUntil && new Date(user.lockUntil) > new Date()) {
-        return res.status(429).json({ success: false, error: 'Účet je dočasně uzamčen kvůli příliš mnoha neúspěšným pokusům. Zkuste to za 15 minut.' });
-    }
+        const match = await bcrypt.compare(password, user.password);
+        if (!match) {
+            const failedAttempts = (user.failedLoginAttempts || 0) + 1;
+            let lockTime = null;
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-        const failedAttempts = (user.failedLoginAttempts || 0) + 1;
-        let lockTime = null;
-
-       if (failedAttempts >= 5) {
+            if (failedAttempts >= 5) {
                 lockTime = new Date(Date.now() + 15 * 60 * 1000).toISOString();
                 db.run(`UPDATE users SET failedLoginAttempts = ?, lockUntil = ? WHERE username = ?`, [failedAttempts, lockTime, username]);
             } else {
@@ -319,16 +315,17 @@ app.post('/api/login', loginLimiter, [
             }
 
             db.run(`INSERT INTO security_logs (ip, event, details) VALUES (?, ?, ?)`, [clientIp, 'FAILED_LOGIN', `Failed login for: ${username} (Attempt ${failedAttempts})`]);
-        
-        saveDatabase();
-        return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
-    }
+            
+            saveDatabase();
+            return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
+        }
 
-    db.run(`UPDATE users SET lastIp = ?, failedLoginAttempts = 0, lockUntil = NULL WHERE username = ?`, [clientIp, username]);
-
-    saveDatabase();
-    req.session.username = username;
-    res.json({ success: true });
+        db.run(`UPDATE users SET lastIp = ?, failedLoginAttempts = 0, lockUntil = NULL WHERE username = ?`, [clientIp, username], () => {
+            saveDatabase();
+            req.session.username = username;
+            res.json({ success: true });
+        });
+    });
 });
 
 app.post('/api/request-password-reset', resetLimiter, [
@@ -395,19 +392,22 @@ app.get('/api/user', (req, res) => {
         return res.status(401).json({ success: false, error: 'Nepřihlášen' });
     }
 
-    const user = db.prepare(`SELECT id, username, email, balance, hasBooster, referralCode FROM users WHERE username = ?`).get(req.session.username);
+    db.get(`SELECT id, username, email, balance, hasBooster, referralCode FROM users WHERE username = ?`, [req.session.username], (err, user) => {
+        if (err || !user) {
+            return res.status(404).json({ success: false, error: 'Uživatel nenalezen' });
+        }
 
-    if (!user) {
-        return res.status(404).json({ success: false, error: 'Uživatel nenalezen' });
-    }
-    res.json({
-        success: true,
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        balance: Number(user.balance.toFixed(2)),
-        hasBooster: user.hasBooster,
-        referralCode: user.referralCode || 'Neznámý'
+        const currentBalance = user.balance !== null && user.balance !== undefined ? Number(user.balance) : 0.00;
+
+        res.json({
+            success: true,
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            balance: Number(currentBalance.toFixed(2)),
+            hasBooster: user.hasBooster || 0,
+            referralCode: user.referralCode || 'Neznámý'
+        });
     });
 });
 
@@ -449,18 +449,6 @@ app.post('/api/buy-vip', earnLimiter, (req, res) => {
         });
     });
 });
-    try {
-        const newBalance = buyVipTx();
-        saveDatabase();
-        res.json({
-            success: true,
-            newBalance: newBalance,
-            message: 'Gratuluji! VIP balíček byl úspěšně aktivován.'
-        });
-    } catch (err) {
-        res.json({ success: false, error: err.message });
-    }
-});
 
 app.post('/api/request-payout', payoutLimiter, [
     body('method').notEmpty().withMessage('Chybí platební metoda.'),
@@ -499,19 +487,6 @@ app.post('/api/request-payout', payoutLimiter, [
         });
     });
 });
-
-    try {
-        const newBalance = requestPayoutTx();
-        saveDatabase();
-        res.json({
-            success: true,
-            newBalance: newBalance,
-            message: 'Žádost o výplatu byla úspěšně odeslána k ručnímu auditu!'
-        });
-    } catch (err) {
-    
-    }
-
 
 app.get('/api/referral-stats', (req, res) => {
     if (!req.session.username) return res.status(401).json({ success: false });
