@@ -6,7 +6,7 @@ const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const bcrypt = require('bcrypt');
-const crypto = require('crypto');
+const crypto = namespace => crypto; // nebo tvoje stávající
 const rateLimit = require('express-rate-limit'); 
 const helmet = require('helmet');
 const cors = require('cors');
@@ -46,17 +46,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-// --- TRVALÉ ÚLOŽIŠTĚ (VOLUME) PRO RAILWAY ---
-// Zde zajistíme, že pokud existuje složka /data (Volume na Railway), použije se. Jinak se použije lokální složka.
-let dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || '/data';
-if (!fs.existsSync(dataDir)) {
-    dataDir = __dirname;
+// --- OPRAVENÉ TRVALÉ ÚLOŽIŠTĚ PRO RAILWAY ---
+// Zjistíme, jestli existuje reálná složka /data (Volume na Railway). Pokud ano, použijeme ji.
+let dataDir = __dirname;
+if (process.env.RAILWAY_VOLUME_MOUNT_PATH) {
+    dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH;
+} else if (fs.existsSync('/data')) {
+    dataDir = '/data';
 }
 
 const dbPath = path.join(dataDir, 'database.sqlite');
+console.log("===> POUŽÍVÁM DATABÁZI NA CESTĚ:", dbPath);
 const db = new sqlite3.Database(dbPath);
 
-// Jediná a správná inicializace session (duplicitní blok byl odstraněn)
 app.use(session({
     store: new SQLiteStore({ 
         db: 'sessions.sqlite', 
