@@ -6,7 +6,7 @@ const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const bcrypt = require('bcrypt');
-const crypto = namespace => crypto; // nebo tvoje stávající
+const crypto = require('crypto');
 const rateLimit = require('express-rate-limit'); 
 const helmet = require('helmet');
 const cors = require('cors');
