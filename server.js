@@ -511,7 +511,7 @@ app.post('/api/request-payout', payoutLimiter, [
     } catch (err) {
         res.json({ success: false, error: err.message });
     }
-});
+
 
 app.get('/api/referral-stats', (req, res) => {
     if (!req.session.username) return res.status(401).json({ success: false });
