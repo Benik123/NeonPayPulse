@@ -80,14 +80,9 @@ async function initDatabase() {
                 lastSocialTask INTEGER DEFAULT 0,
                 lastIp TEXT,
                 failedLoginAttempts INTEGER DEFAULT 0,
-                lockUntil DATETIME DEFAULT NULL,
-                currentSessionId TEXT
+                lockUntil DATETIME DEFAULT NULL
             );
         `);
-
-        try {
-            await db.execute(`ALTER TABLE users ADD COLUMN currentSessionId TEXT;`);
-        } catch (e) {}
 
         await db.execute(`
             CREATE TABLE IF NOT EXISTS logs (
@@ -207,37 +202,6 @@ const sensitiveActionLimiter = rateLimit({
 function saveDatabase() {
     return true;
 }
-
-// --- KONTROLA JEDINÉHO AKTIVNÍHO ZAŘÍZENÍ PŘES TURSO ---
-const checkSingleSession = async (req, res, next) => {
-    if (!req.session.username) {
-        return next();
-    }
-    try {
-        // Vytáhneme z Turso databáze aktuální session ID, které má uživatel povolené
-        const result = await db.execute({
-            sql: `SELECT currentSessionId FROM users WHERE username = ?`,
-            args: [req.session.username]
-        });
-        const user = result.rows[0];
-        
-        // Pokud session ID v prohlížeči (uložené v req.session) nesouhlasí s tím v Turso databázi:
-        if (!user || !user.currentSessionId || req.session.userSessionId !== user.currentSessionId) {
-            req.session.destroy(() => {
-                if (req.method === 'GET' && !req.originalUrl.startsWith('/api/')) {
-                    return res.redirect('/login.html');
-                }
-                return res.status(401).json({ success: false, error: 'Byl jsi přihlášen na jiném zařízení.' });
-            });
-            return;
-        }
-    } catch (err) {
-        console.error("Chyba při ověřování v Turso:", err);
-    }
-    next();
-};
-
-app.use(checkSingleSession);
 
 app.use((req, res, next) => {
     if (!req.session.csrfToken) {
@@ -377,11 +341,10 @@ app.post('/api/register', registerLimiter, [
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const myRefCode = username + Math.floor(1000 + Math.random() * 9000);
-        const userSessionId = crypto.randomBytes(16).toString('hex');
 
         await db.execute({
-            sql: `INSERT INTO users (username, email, password, balance, hasBooster, referralCode, referredBy, lastDailyDate, lastClickAd, lastVideo, lastSurvey, lastIp, currentSessionId) VALUES (?, ?, ?, 0.00, 0, ?, ?, NULL, 0, 0, 0, ?, ?)`,
-            args: [username, email, hashedPassword, myRefCode, refCode || null, clientIp, userSessionId]
+            sql: `INSERT INTO users (username, email, password, balance, hasBooster, referralCode, referredBy, lastDailyDate, lastClickAd, lastVideo, lastSurvey, lastIp) VALUES (?, ?, ?, 0.00, 0, ?, ?, NULL, 0, 0, 0, ?)`,
+            args: [username, email, hashedPassword, myRefCode, refCode || null, clientIp]
         });
     
         await db.execute({
@@ -390,7 +353,6 @@ app.post('/api/register', registerLimiter, [
         });
 
         req.session.username = username;
-        req.session.userSessionId = userSessionId;
         res.json({ success: true });
     } catch (err) {
         console.error("CHYBA V REGISTRACI:", err.message);
@@ -460,15 +422,12 @@ app.post('/api/login', loginLimiter, [
             return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
         }
 
-        const userSessionId = crypto.randomBytes(16).toString('hex');
-
         await db.execute({ 
-            sql: `UPDATE users SET lastIp = ?, failedLoginAttempts = 0, lockUntil = NULL, currentSessionId = ? WHERE username = ?`, 
-            args: [clientIp, userSessionId, username] 
+            sql: `UPDATE users SET lastIp = ?, failedLoginAttempts = 0, lockUntil = NULL WHERE username = ?`, 
+            args: [clientIp, username] 
         });
 
         req.session.username = username;
-        req.session.userSessionId = userSessionId;
         res.json({ success: true });
     } catch (err) {
         console.error("CHYBA V LOGINU:", err.message);
