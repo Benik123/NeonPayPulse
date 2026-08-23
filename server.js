@@ -2,12 +2,9 @@ console.log("TEST: SERVER SE SPUSTIL A TENTO SOUBOR BĚŽÍ!");
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-// Poznámka: connect-sqlite3 obvykle vyžaduje lokální soubor, 
-// ale pro provoz v cloudu na Turso ho pro session můžeme nechat padat do paměti nebo do souboru, 
-// případně ho upravíme. Teď ho tu necháme, aby ti nepadaly importy.
 const SQLiteStore = require('connect-sqlite3')(session);
 const path = require('path');
-const { createClient } = require('@libsql/client'); // <--- Nová Turso knihovna
+const { createClient } = require('@libsql/client');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit'); 
@@ -201,7 +198,6 @@ const sensitiveActionLimiter = rateLimit({
     legacyHeaders: false,
     message: { success: false, error: 'Příliš mnoho požadavků. Zkuste to za chvíli.' }
 });
-
 
 function saveDatabase() {
     return true;
@@ -519,14 +515,12 @@ app.post('/api/buy-vip', earnLimiter, async (req, res) => {
     if (!req.session.username) return res.status(401).json({ success: false, error: 'Nepřihlášen' });
 
     const { actionType } = req.body;
-
     const vipPrices = {
         'buy-vip-bronze': 89.00,
         'buy-vip-silver': 189.00,
         'buy-vip-gold': 289.00,
         'buy-vip': 200.00
     };
-
     const vipPrice = vipPrices[actionType] || 200.00;
 
     try {
@@ -548,14 +542,22 @@ app.post('/api/buy-vip', earnLimiter, async (req, res) => {
 
         const newBalance = Number((user.balance - vipPrice).toFixed(2));
 
-        await db.execute({
-            sql: `UPDATE users SET balance = ?, hasBooster = 1 WHERE username = ?`,
-            args: [newBalance, req.session.username]
-        });
-        await db.execute({
-            sql: `INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`,
-            args: [req.session.username, 'nákup-vip', -vipPrice]
-        });
+        // Transakce pro bezpečný nákup VIP
+        const tx = await db.transaction("write");
+        try {
+            await tx.execute({
+                sql: `UPDATE users SET balance = ?, hasBooster = 1 WHERE username = ?`,
+                args: [newBalance, req.session.username]
+            });
+            await tx.execute({
+                sql: `INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`,
+                args: [req.session.username, 'nákup-vip', -vipPrice]
+            });
+            await tx.commit();
+        } catch (txErr) {
+            await tx.rollback();
+            throw txErr;
+        }
 
         res.json({
             success: true,
@@ -598,18 +600,26 @@ app.post('/api/request-payout', payoutLimiter, [
         const payoutAmount = Number(user.balance.toFixed(2));
         const newBalance = 0.00;
 
-        await db.execute({
-            sql: `UPDATE users SET balance = ? WHERE username = ?`,
-            args: [newBalance, req.session.username]
-        });
-        await db.execute({
-            sql: `INSERT INTO payouts (username, amount, method, details, status) VALUES (?, ?, ?, ?, 'pending')`,
-            args: [req.session.username, payoutAmount, method, details]
-        });
-        await db.execute({
-            sql: `INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`,
-            args: [req.session.username, 'vyplata-zadost', -payoutAmount]
-        });
+        // Transakce pro bezpečné odeslání výplaty
+        const tx = await db.transaction("write");
+        try {
+            await tx.execute({
+                sql: `UPDATE users SET balance = ? WHERE username = ?`,
+                args: [newBalance, req.session.username]
+            });
+            await tx.execute({
+                sql: `INSERT INTO payouts (username, amount, method, details, status) VALUES (?, ?, ?, ?, 'pending')`,
+                args: [req.session.username, payoutAmount, method, details]
+            });
+            await tx.execute({
+                sql: `INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`,
+                args: [req.session.username, 'vyplata-zadost', -payoutAmount]
+            });
+            await tx.commit();
+        } catch (txErr) {
+            await tx.rollback();
+            throw txErr;
+        }
 
         res.json({
             success: true,
@@ -765,55 +775,63 @@ app.post('/api/earn', earnLimiter, async (req, res) => {
         const level2Share = Number((baseReward * 0.05).toFixed(2));
         const newBalance = Number((user.balance + userShare).toFixed(2));
 
-        if (actionType === 'daily-bonus') {
-            const todayStr = new Date().toISOString().split('T')[0];
-            await db.execute({
-                sql: `UPDATE users SET lastDailyDate = ?, lastIp = ?, balance = ? WHERE username = ?`,
-                args: [todayStr, clientIp, newBalance, req.session.username]
-            });
-        } else {
-            const config = configs[actionType];
-            await db.execute({
-                sql: `UPDATE users SET ${config.col} = ?, lastIp = ?, balance = ? WHERE username = ?`,
-                args: [now, clientIp, newBalance, req.session.username]
-            });
-        }
-
-        await db.execute({
-            sql: `INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`,
-            args: [req.session.username, actionType, userShare]
-        });
-
-        if (user.referredBy) {
-            const l1Res = await db.execute({
-                sql: `SELECT username, balance, referredBy FROM users WHERE referralCode = ?`,
-                args: [user.referredBy]
-            });
-            const level1User = l1Res.rows[0];
-
-            if (level1User) {
-                const newL1Balance = Number((level1User.balance + level1Share).toFixed(2));
-                await db.execute({
-                    sql: `UPDATE users SET balance = ? WHERE username = ?`,
-                    args: [newL1Balance, level1User.username]
+        // Bezpečná transakce pro vydělávání a odměny v referalech
+        const tx = await db.transaction("write");
+        try {
+            if (actionType === 'daily-bonus') {
+                const todayStr = new Date().toISOString().split('T')[0];
+                await tx.execute({
+                    sql: `UPDATE users SET lastDailyDate = ?, lastIp = ?, balance = ? WHERE username = ?`,
+                    args: [todayStr, clientIp, newBalance, req.session.username]
                 });
+            } else {
+                const config = configs[actionType];
+                await tx.execute({
+                    sql: `UPDATE users SET ${config.col} = ?, lastIp = ?, balance = ? WHERE username = ?`,
+                    args: [now, clientIp, newBalance, req.session.username]
+                });
+            }
 
-                if (level1User.referredBy) {
-                    const l2Res = await db.execute({
-                        sql: `SELECT username, balance FROM users WHERE referralCode = ?`,
-                        args: [level1User.referredBy]
+            await tx.execute({
+                sql: `INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`,
+                args: [req.session.username, actionType, userShare]
+            });
+
+            if (user.referredBy) {
+                const l1Res = await tx.execute({
+                    sql: `SELECT username, balance, referredBy FROM users WHERE referralCode = ?`,
+                    args: [user.referredBy]
+                });
+                const level1User = l1Res.rows[0];
+
+                if (level1User) {
+                    const newL1Balance = Number((level1User.balance + level1Share).toFixed(2));
+                    await tx.execute({
+                        sql: `UPDATE users SET balance = ? WHERE username = ?`,
+                        args: [newL1Balance, level1User.username]
                     });
-                    const level2User = l2Res.rows[0];
 
-                    if (level2User) {
-                        const newL2Balance = Number((level2User.balance + level2Share).toFixed(2));
-                        await db.execute({
-                            sql: `UPDATE users SET balance = ? WHERE username = ?`,
-                            args: [newL2Balance, level2User.username]
+                    if (level1User.referredBy) {
+                        const l2Res = await tx.execute({
+                            sql: `SELECT username, balance FROM users WHERE referralCode = ?`,
+                            args: [level1User.referredBy]
                         });
+                        const level2User = l2Res.rows[0];
+
+                        if (level2User) {
+                            const newL2Balance = Number((level2User.balance + level2Share).toFixed(2));
+                            await tx.execute({
+                                sql: `UPDATE users SET balance = ? WHERE username = ?`,
+                                args: [newL2Balance, level2User.username]
+                            });
+                        }
                     }
                 }
             }
+            await tx.commit();
+        } catch (txErr) {
+            await tx.rollback();
+            throw txErr;
         }
 
         return res.json({
