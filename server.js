@@ -80,9 +80,17 @@ async function initDatabase() {
                 lastSocialTask INTEGER DEFAULT 0,
                 lastIp TEXT,
                 failedLoginAttempts INTEGER DEFAULT 0,
-                lockUntil DATETIME DEFAULT NULL
+                lockUntil DATETIME DEFAULT NULL,
+                currentSessionId TEXT
             );
         `);
+
+        // Bezpečnostní migrace pro existující tabulku bez currentSessionId
+        try {
+            await db.execute(`ALTER TABLE users ADD COLUMN currentSessionId TEXT;`);
+        } catch (e) {
+            // Sloupec už pravděpodobně existuje
+        }
 
         await db.execute(`
             CREATE TABLE IF NOT EXISTS logs (
@@ -224,6 +232,34 @@ const csrfProtection = (req, res, next) => {
 
 app.use(csrfProtection);
 
+// --- KONTROLA JEDINÉHO AKTIVNÍHO ZAŘÍZENÍ ---
+const checkSingleSession = async (req, res, next) => {
+    if (!req.session.username) {
+        return next();
+    }
+    try {
+        const result = await db.execute({
+            sql: `SELECT currentSessionId FROM users WHERE username = ?`,
+            args: [req.session.username]
+        });
+        const user = result.rows[0];
+        if (!user || user.currentSessionId !== req.session.userSessionId) {
+            req.session.destroy(() => {
+                if (req.method === 'GET' && !req.originalUrl.startsWith('/api/')) {
+                    return res.redirect('/login.html');
+                }
+                return res.status(401).json({ success: false, error: 'Byl jsi přihlášen na jiném zařízení.' });
+            });
+            return;
+        }
+    } catch (err) {
+        console.error("Chyba při ověřování session:", err);
+    }
+    next();
+};
+
+app.use(checkSingleSession);
+
 app.get('/api/csrf-token', (req, res) => {
     res.json({ success: true, csrfToken: req.session.csrfToken });
 });
@@ -341,10 +377,11 @@ app.post('/api/register', registerLimiter, [
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         const myRefCode = username + Math.floor(1000 + Math.random() * 9000);
+        const userSessionId = crypto.randomBytes(16).toString('hex');
 
         await db.execute({
-            sql: `INSERT INTO users (username, email, password, balance, hasBooster, referralCode, referredBy, lastDailyDate, lastClickAd, lastVideo, lastSurvey, lastIp) VALUES (?, ?, ?, 0.00, 0, ?, ?, NULL, 0, 0, 0, ?)`,
-            args: [username, email, hashedPassword, myRefCode, refCode || null, clientIp]
+            sql: `INSERT INTO users (username, email, password, balance, hasBooster, referralCode, referredBy, lastDailyDate, lastClickAd, lastVideo, lastSurvey, lastIp, currentSessionId) VALUES (?, ?, ?, 0.00, 0, ?, ?, NULL, 0, 0, 0, ?, ?)`,
+            args: [username, email, hashedPassword, myRefCode, refCode || null, clientIp, userSessionId]
         });
     
         await db.execute({
@@ -353,6 +390,7 @@ app.post('/api/register', registerLimiter, [
         });
 
         req.session.username = username;
+        req.session.userSessionId = userSessionId;
         res.json({ success: true });
     } catch (err) {
         console.error("CHYBA V REGISTRACI:", err.message);
@@ -422,12 +460,15 @@ app.post('/api/login', loginLimiter, [
             return res.json({ success: false, error: 'Nesprávné uživatelské jméno nebo heslo.' });
         }
 
+        const userSessionId = crypto.randomBytes(16).toString('hex');
+
         await db.execute({ 
-            sql: `UPDATE users SET lastIp = ?, failedLoginAttempts = 0, lockUntil = NULL WHERE username = ?`, 
-            args: [clientIp, username] 
+            sql: `UPDATE users SET lastIp = ?, failedLoginAttempts = 0, lockUntil = NULL, currentSessionId = ? WHERE username = ?`, 
+            args: [clientIp, userSessionId, username] 
         });
 
         req.session.username = username;
+        req.session.userSessionId = userSessionId;
         res.json({ success: true });
     } catch (err) {
         console.error("CHYBA V LOGINU:", err.message);
@@ -542,7 +583,6 @@ app.post('/api/buy-vip', earnLimiter, async (req, res) => {
 
         const newBalance = Number((user.balance - vipPrice).toFixed(2));
 
-        // Transakce pro bezpečný nákup VIP
         const tx = await db.transaction("write");
         try {
             await tx.execute({
@@ -600,7 +640,6 @@ app.post('/api/request-payout', payoutLimiter, [
         const payoutAmount = Number(user.balance.toFixed(2));
         const newBalance = 0.00;
 
-        // Transakce pro bezpečné odeslání výplaty
         const tx = await db.transaction("write");
         try {
             await tx.execute({
@@ -775,7 +814,6 @@ app.post('/api/earn', earnLimiter, async (req, res) => {
         const level2Share = Number((baseReward * 0.05).toFixed(2));
         const newBalance = Number((user.balance + userShare).toFixed(2));
 
-        // Bezpečná transakce pro vydělávání a odměny v referalech
         const tx = await db.transaction("write");
         try {
             if (actionType === 'daily-bonus') {
