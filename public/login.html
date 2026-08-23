@@ -39,15 +39,15 @@
                     <input type="text" id="username" required class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition">
                 </div>
 
-                <!-- Upravené políčko pro heslo s tlačítkem Zobrazit/Skrýt -->
+                <!-- Políčko pro heslo s emoji ikonou -->
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-300">Heslo</label>
                     <div class="relative">
-    <input type="password" id="password" required class="w-full bg-slate-950/85 border border-slate-800 rounded-xl px-4 py-3 pr-20 text-sm text-white focus:outline-none focus:border-emerald-500 transition">
-    <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 px-4 text-xs font-bold text-slate-900 hover:text-black focus:outline-none transition">
-        Zobrazit
-    </button>
-</div>
+                        <input type="password" id="password" required class="w-full bg-slate-950/85 border border-slate-800 rounded-xl px-4 py-3 pr-12 text-sm text-white focus:outline-none focus:border-emerald-500 transition">
+                        <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 px-3.5 flex items-center justify-center text-lg focus:outline-none transition cursor-pointer select-none">
+                            👁️
+                        </button>
+                    </div>
                 </div>
 
                 <div class="flex justify-end">
@@ -75,7 +75,6 @@
         let csrfToken = '';
 
         window.addEventListener('DOMContentLoaded', async () => {
-            // Logika pro tlačítko Zobrazit/Skrýt heslo
             const togglePasswordBtn = document.getElementById('togglePassword');
             const passwordInput = document.getElementById('password');
 
@@ -84,10 +83,10 @@
                     const currentType = passwordInput.getAttribute('type');
                     if (currentType === 'password') {
                         passwordInput.setAttribute('type', 'text');
-                        togglePasswordBtn.innerText = 'Skrýt';
+                        togglePasswordBtn.innerText = '🔒'; // Když je heslo vidět
                     } else {
                         passwordInput.setAttribute('type', 'password');
-                        togglePasswordBtn.innerText = 'Zobrazit';
+                        togglePasswordBtn.innerText = '👁️'; // Když je heslo skryté
                     }
                 });
             }
