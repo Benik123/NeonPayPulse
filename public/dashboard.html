@@ -1386,458 +1386,7 @@
         </div>
     </div>
 
-    <!-- Skripty -->
-    <script>
-        let currentPage = 1;
-        const limit = 10;
-        let todayEarnedCoins = 0;
-        let currentStreak = 1;
-        let isFeedHidden = false;
-        let isLightMode = false;
-
-        function toggleTheme() {
-            isLightMode = !isLightMode;
-            const body = document.getElementById('body-root');
-            const sidebar = document.getElementById('sidebar-root');
-            const themeBtn = document.getElementById('theme-toggle-btn');
-
-            if (isLightMode) {
-                body.classList.add('light-mode');
-                sidebar.classList.add('light-mode');
-                themeBtn.innerHTML = "🌙 Tmavý režim";
-                themeBtn.className = "px-5 py-2.5 bg-slate-950 hover:bg-slate-900 text-white font-heading font-bold text-xs rounded-xl transition cursor-pointer shadow-md";
-            } else {
-                body.classList.remove('light-mode');
-                sidebar.classList.remove('light-mode');
-                themeBtn.innerHTML = "☀️ Světlý režim";
-                themeBtn.className = "px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-heading font-bold text-xs rounded-xl transition cursor-pointer shadow-md";
-            }
-        }
-
-        function requestPayout() {
-            const currentCoins = parseInt(document.getElementById('balance-display').innerText.replace(/\s/g, '')) || 0;
-            const minPayoutCoins = 20000;
-
-            if (currentCoins < minPayoutCoins) {
-                alert(`Minimální částka pro výplatu je 200 Kč (20 000 coinů). Aktuálně máte ${currentCoins.toLocaleString()} coinů.`);
-                return;
-            }
-
-            let method = "PayPal";
-            let details = "";
-            if (document.getElementById('method-iban').checked) {
-                method = "Bankovní účet (IBAN)";
-                details = document.getElementById('payout-iban-input').value;
-            } else if (document.getElementById('method-card').checked) {
-                method = "Platební karta";
-                details = document.getElementById('payout-card-input').value;
-            } else {
-                details = document.getElementById('payout-paypal-input').value;
-            }
-
-            if (!details) {
-                alert('Prosím vyplňte platební údaje pro zvolenou metodu.');
-                return;
-            }
-
-            alert(`Žádost o výplatu na ${method} byla úspěšně odeslána! Žádost nyní podléhá ručnímu auditu a bude zpracována do 48 hodin (po odečtení 10% poplatku brány).`);
-        }
-
-        const streakRewards = [
-            { day: 1, reward: 200 },
-            { day: 2, reward: 350 },
-            { day: 3, reward: 500 },
-            { day: 4, reward: 750 },
-            { day: 5, reward: 1000 },
-            { day: 6, reward: 1500 },
-            { day: 7, reward: 3000 }
-        ];
-
-        const questPool = [
-            { title: "Mistr klikání", desc: "Proklikej dnes alespoň 5 reklamních bannerů pro nárok na bonus.", action: "quest-click-5" },
-            { title: "Televizní maraton", desc: "Zhlédni alespoň 3 propagační videa od našich inzerentů.", action: "quest-videos-3" },
-            { title: "Aktivní ambasador", desc: "Přiveď alespoň 1 nového uživatele, který dokončí úkol.", action: "quest-ref-1" }
-        ];
-
-        let currentQuest = null;
-
-        function loadDailyQuest() {
-            const today = new Date();
-            const dateString = `${today.getDate()}${today.getMonth()}${today.getFullYear()}`;
-            let hash = 0;
-            for (let i = 0; i < dateString.length; i++) {
-                hash = dateString.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const index = Math.abs(hash) % questPool.length;
-            currentQuest = questPool[index];
-
-            document.getElementById('bonus-section-title').innerText = `${currentQuest.title} (Den ${currentStreak}/7)`;
-            document.getElementById('bonus-section-desc').innerText = currentQuest.desc;
-
-            renderStreakTable();
-        }
-
-        function renderStreakTable() {
-            const grid = document.getElementById('streak-table-grid');
-            if(!grid) return;
-            grid.innerHTML = '';
-
-            document.getElementById('streak-display').innerText = currentStreak;
-            document.getElementById('table-streak-count').innerText = currentStreak;
-
-            let nextDayReward = streakRewards[Math.min(currentStreak, streakRewards.length - 1)].reward;
-            document.getElementById('next-streak-reward').innerText = `+${nextDayReward} coinů`;
-
-            streakRewards.forEach((item) => {
-                let isCompleted = item.day < currentStreak;
-                let isCurrent = item.day === currentStreak;
-
-                let cardBg = "bg-slate-950/50 border-slate-800 text-slate-400";
-                let statusBadge = `<span class="text-xs text-slate-500 font-medium">Uzamčeno</span>`;
-
-                if (isCompleted) {
-                    cardBg = "bg-emerald-950/20 border-emerald-500/40 text-emerald-300";
-                    statusBadge = `<span class="text-xs text-emerald-400 font-bold">Splněno ✓</span>`;
-                } else if (isCurrent) {
-                    cardBg = "bg-purple-950/30 border-purple-500/60 text-white shadow-lg shadow-purple-500/10 ring-1 ring-purple-500/50";
-                    statusBadge = `<span class="text-xs text-purple-400 font-bold animate-pulse">Dnešní výzva</span>`;
-                }
-
-                const div = document.createElement('div');
-                div.className = `p-4 rounded-2xl border flex flex-col justify-between space-y-3 ${cardBg}`;
-                div.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold uppercase tracking-wider">Den ${item.day}</span>
-                        ${statusBadge}
-                    </div>
-                    <div>
-                        <p class="text-lg font-heading font-black">+${item.reward.toLocaleString()}</p>
-                        <p class="text-[10px] opacity-70">coinů</p>
-                    </div>
-                `;
-                grid.appendChild(div);
-            });
-        }
-
-        async function claimDailyQuest() {
-            if (!currentQuest) return;
-            
-            let activeRewardObj = streakRewards[Math.min(currentStreak - 1, streakRewards.length - 1)];
-
-            const response = await fetch('/api/earn', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ actionType: currentQuest.action, streakDay: currentStreak })
-            });
-            
-            const data = await response.json();
-            if (data.success) {
-                let newCoinsTotal = data.newBalance * 100;
-                updateBalanceDisplay(newCoinsTotal);
-                
-                todayEarnedCoins += activeRewardObj.reward;
-                document.getElementById('today-display').innerText = todayEarnedCoins.toLocaleString();
-
-                alert(`Skvělé! Podmínka pro den ${currentStreak} byla splněna. Získáváš +${activeRewardObj.reward} coinů!`);
-                
-                if (currentStreak < 7) {
-                    currentStreak++;
-                } else {
-                    currentStreak = 1;
-                }
-
-                renderStreakTable();
-                
-                const btn2 = document.getElementById('bonus-claim-btn');
-                if(btn2) {
-                    btn2.innerText = "Splněno pro dnešek ✓";
-                    btn2.disabled = true;
-                    btn2.className = "w-full md:w-auto px-6 bg-slate-800 text-slate-500 font-heading font-bold py-3 rounded-xl text-sm cursor-not-allowed";
-                }
-                
-                loadLogs();
-            } else {
-                alert(data.error || 'Nejprve musíš splnit zadanou aktivitu, abys mohl bonus vybrat.');
-            }
-        }
-
-        function switchSection(sectionId) {
-            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-            document.querySelectorAll('aside nav a').forEach(link => {
-                link.classList.remove('active', 'bg-emerald-500/10', 'text-emerald-400', 'border', 'border-emerald-500/20');
-                link.classList.add('opacity-70', 'hover:opacity-100', 'hover:bg-slate-800/50');
-            });
-
-            const targetSection = document.getElementById('section-' + sectionId);
-            if (targetSection) {
-                targetSection.classList.add('active');
-            }
-
-            const activeNav = document.getElementById('nav-' + sectionId);
-            if (activeNav) {
-                activeNav.classList.remove('opacity-70', 'hover:opacity-100', 'hover:bg-slate-800/50');
-                activeNav.classList.add('active', 'bg-emerald-500/10', 'text-emerald-400', 'border', 'border-emerald-500/20');
-            }
-
-                       
-            if (sectionId === 'home') {
-                if (isFeedHidden) {
-                    liveColumn.style.display = "none";
-                    if(floatingBtn) floatingBtn.style.display = "flex";
-                } else {
-                    liveColumn.style.display = ""; // Zruší inline styly, funguje přes CSS
-                    if(floatingBtn) floatingBtn.style.display = "none";
-                }
-            } else {
-                liveColumn.style.display = ""; // CSS (:has) si to převezme a skryje to samo
-                if(floatingBtn) floatingBtn.style.display = "none";
-            }
-        }
-
-       
-
-        function togglePassword(fieldId, btn) {
-            const input = document.getElementById(fieldId);
-            if (input.type === 'password') {
-                input.type = 'text';
-                btn.innerText = '🔒';
-            } else {
-                input.type = 'password';
-                btn.innerText = '👁️';
-            }
-        }
-
-        function openDeleteModal() {
-            document.getElementById('delete-modal').classList.remove('hidden');
-        }
-
-        function closeDeleteModal() {
-            document.getElementById('delete-modal').classList.add('hidden');
-            document.getElementById('delete-confirm-password').value = '';
-        }
-
-        async function executeAccountDeletion() {
-            const password = document.getElementById('delete-confirm-password').value;
-            if (!password) {
-                alert('Pro smazání účtu je nutné zadat heslo.');
-                return;
-            }
-            try {
-                const response = await fetch('/api/delete-account', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ password })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    alert('Účet byl úspěšně smazán.');
-                    window.location.href = '/login.html';
-                } else {
-                    alert(data.error || 'Chyba při mazání účtu.');
-                }
-            } catch (err) {
-                alert('Chyba připojení k serveru.');
-            }
-        }
-
-        function updateBalanceDisplay(newTotalCoins) {
-            document.getElementById('balance-display').innerText = newTotalCoins.toLocaleString();
-            document.getElementById('balance-czk').innerText = (newTotalCoins / 100).toFixed(2);
-
-            const minPayout = 20000;
-            let percentage = Math.min(Math.round((newTotalCoins / minPayout) * 100), 100);
-            const progressBar = document.getElementById('payout-progress-bar');
-            const progressText = document.getElementById('payout-progress-text');
-            if (progressBar) progressBar.style.width = percentage + '%';
-            if (progressText) progressText.innerText = percentage + '%';
-        }
-
-        function copyHomeRefLink() {
-            const input = document.getElementById('home-ref-link');
-            input.select();
-            input.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(input.value);
-            alert('Referral odkaz byl zkopírován do schránky!');
-        }
-
-        function updateBannerPreview() {
-            const width = document.getElementById('banner-width').value;
-            const height = document.getElementById('banner-height').value;
-            const customText = document.getElementById('banner-text').value || "Vydělávejte online!";
-            
-            const previewBox = document.getElementById('banner-preview-box');
-            previewBox.style.width = width + 'px';
-            previewBox.style.height = height + 'px';
-            
-            document.getElementById('preview-title').innerText = customText;
-
-            const refLink = document.getElementById('ref-link-display').innerText || window.location.origin + '/register.html';
-            
-            const generatedHtml = `<a href="${refLink}" target="_blank" style="display:inline-block; width:${width}px; height:${height}px; background:linear-gradient(135deg, #022c22, #0f172a); border:2px solid #10b981; border-radius:16px; padding:20px; text-align:center; text-decoration:none; font-family:sans-serif; box-sizing:border-box; position:relative; overflow:hidden;">
-    <span style="background:rgba(16, 185, 129, 0.2); color:#6ee7b7; padding:4px 10px; border-radius:8px; font-size:10px; font-weight:bold; border:1px solid rgba(16, 185, 129, 0.3);">NeonPayPulse</span>
-    <h4 style="color:#ffffff; font-size:14px; font-weight:bold; margin:10px 0 5px 0;">${customText}</h4>
-    <div style="color:#cbd5e1; font-size:10px; margin-bottom:15px;">100% zdarma • Pasivní příjem</div>
-    <div style="background:#10b981; color:#030712; font-weight:900; font-size:12px; padding:8px 12px; border-radius:10px; display:inline-block;">Připojit se hned ➔</div>
-</a>`;
-
-            document.getElementById('banner-code-output').value = generatedHtml;
-        }
-
-        function copyBannerCode() {
-            const textarea = document.getElementById('banner-code-output');
-            textarea.select();
-            textarea.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(textarea.value);
-            alert('HTML kód banneru byl zkopírován do schránky!');
-        }
-
-        function sendContactMessage() {
-            const name = document.getElementById('contact-name').value;
-            const email = document.getElementById('contact-email').value;
-            const message = document.getElementById('contact-message').value;
-
-            if (!name || !email || !message) {
-                alert('Prosím vyplňte všechna povinná pole formuláře.');
-                return;
-            }
-
-            alert('Děkujeme, ' + name + '! Vaše zpráva byla úspěšně odeslána týmu podpoře. Odpovíme vám co nejdříve na ' + email + '.');
-            
-            document.getElementById('contact-name').value = '';
-            document.getElementById('contact-email').value = '';
-            document.getElementById('contact-message').value = '';
-        }
-
-        async function loadUserData() {
-            try {
-                const response = await fetch('/api/user', { credentials: 'include' });
-                if (!response.ok) return;
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('username-display').innerText = data.username;
-                    let totalCoins = data.balance * 100; 
-                    updateBalanceDisplay(totalCoins);
-                    
-                    const fullRefLink = window.location.origin + '/register.html?ref=' + data.referralCode;
-                    
-                    document.getElementById('home-ref-link').value = fullRefLink;
-                    document.getElementById('ref-code-display').innerText = data.referralCode;
-                    document.getElementById('ref-link-display').innerText = fullRefLink;
-
-                    updateBannerPreview();
-                }
-                loadLogs();
-                loadReferralStats();
-            } catch (err) {
-                console.error('Chyba při načítání dat:', err);
-            }
-        }
-
-        async function loadReferralStats() {
-            try {
-                const response = await fetch('/api/referral-stats', { credentials: 'include' });
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('l1-count').innerText = data.l1Count;
-                    document.getElementById('l2-count').innerText = data.l2Count;
-                    document.getElementById('total-count').innerText = data.totalReferred;
-                }
-            } catch (err) {
-                console.error('Chyba při načítání referral statistik:', err);
-            }
-        }
-
-        async function loadLogs() {
-            try {
-                const response = await fetch(`/api/logs?page=${currentPage}&limit=${limit}`, { credentials: 'include' });
-                const data = await response.json();
-                if (data.success) {
-                    const tbody = document.querySelector('#logsTable tbody');
-                    tbody.innerHTML = '';
-                    if (data.logs.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-slate-500">Zatím žádná historie.</td></tr>`;
-                        return;
-                    }
-                    data.logs.forEach(log => {
-                        const row = document.createElement('tr');
-                        row.className = 'border-b border-slate-800/40 hover:bg-slate-800/20 transition';
-                        let coinVal = log.amount * 100;
-                        let colorClass = coinVal > 0 ? 'text-emerald-400 font-semibold' : 'text-slate-300';
-                        row.innerHTML = `
-                            <td class="py-3 px-4 capitalize">${log.action}</td>
-                            <td class="py-3 px-4 ${colorClass}">${coinVal > 0 ? '+' + coinVal.toLocaleString() : coinVal.toLocaleString()} coinů</td>
-                            <td class="py-3 px-4 text-xs text-slate-400">${new Date(log.timestamp).toLocaleString()}</td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                }
-            } catch (error) {
-                console.error('Chyba při načítání logů:', error);
-            }
-        }
-
-        function changePage(direction) {
-            currentPage += direction;
-            if (currentPage < 1) currentPage = 1;
-            loadLogs();
-        }
-
-        async function doAction(actionType) {
-            let endpoint = '/api/earn';
-            let payload = { actionType };
-
-            if (actionType.startsWith('buy-vip')) {
-                endpoint = '/api/buy-vip';
-            }
-
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify(payload)
-            });
-            const data = await response.json();
-            if (data.success) {
-                if (data.newBalance !== undefined) {
-                    let newCoinsTotal = data.newBalance * 100;
-                    updateBalanceDisplay(newCoinsTotal);
-                }
-                alert(data.message || 'Akce proběhla úspěšně!');
-                loadUserData(); 
-            } else {
-                alert(data.error || 'Nastala chyba.');
-            }
-        }
-
-        function updateSettings(type) {
-            if (type === 'password') {
-                const newPass = document.getElementById('setting-new-password').value;
-                const confirmPass = document.getElementById('setting-confirm-password').value;
-                if (newPass !== confirmPass) {
-                    alert('Nová hesla se neshodují!');
-                    return;
-                }
-            }
-            alert('Nastavení typu "' + type + '" bylo uloženo.');
-        }
-        async function logoutUser() {
-            try {
-                await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-            } catch (err) {
-                console.warn('Backend není dostupný:', err);
-            }
-            window.location.href = '/index.html';
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            loadUserData();
-            loadDailyQuest();
-            updateBannerPreview();
-            switchSection('home');
-        });
-    </script>
+   
 </body>
 </html>
 
@@ -2474,7 +2023,6 @@
         </div>
     </div>
 
-    <!-- Skripty -->
     <script>
         let currentPage = 1;
         const limit = 10;
@@ -2528,7 +2076,7 @@
                 return;
             }
 
-            alert(`Žádost o výplatu na ${method} byla úspěšně odeslána! Žádost nyní podléhá ručnímu auditu a bude zpracována do 48 hodin (po odečtení 10% poplatku brány).`);
+            alert(`Žádost o výplatu na ${method} byla úspěšně odeslána! Žádost nyní podléhá ručnímu auditu a bude zpracována do 48 hodin.`);
         }
 
         const streakRewards = [
@@ -2559,8 +2107,10 @@
             const index = Math.abs(hash) % questPool.length;
             currentQuest = questPool[index];
 
-            document.getElementById('bonus-section-title').innerText = `${currentQuest.title} (Den ${currentStreak}/7)`;
-            document.getElementById('bonus-section-desc').innerText = currentQuest.desc;
+            const titleElem = document.getElementById('bonus-section-title');
+            const descElem = document.getElementById('bonus-section-desc');
+            if(titleElem) titleElem.innerText = `${currentQuest.title} (Den ${currentStreak}/7)`;
+            if(descElem) descElem.innerText = currentQuest.desc;
 
             renderStreakTable();
         }
@@ -2570,11 +2120,14 @@
             if(!grid) return;
             grid.innerHTML = '';
 
-            document.getElementById('streak-display').innerText = currentStreak;
-            document.getElementById('table-streak-count').innerText = currentStreak;
+            const streakDisp = document.getElementById('streak-display');
+            const tableStreak = document.getElementById('table-streak-count');
+            if(streakDisp) streakDisp.innerText = currentStreak;
+            if(tableStreak) tableStreak.innerText = currentStreak;
 
             let nextDayReward = streakRewards[Math.min(currentStreak, streakRewards.length - 1)].reward;
-            document.getElementById('next-streak-reward').innerText = `+${nextDayReward} coinů`;
+            const nextRewardElem = document.getElementById('next-streak-reward');
+            if(nextRewardElem) nextRewardElem.innerText = `+${nextDayReward} coinů`;
 
             streakRewards.forEach((item) => {
                 let isCompleted = item.day < currentStreak;
@@ -2609,7 +2162,6 @@
 
         async function claimDailyQuest() {
             if (!currentQuest) return;
-            
             let activeRewardObj = streakRewards[Math.min(currentStreak - 1, streakRewards.length - 1)];
 
             const response = await fetch('/api/earn', {
@@ -2643,14 +2195,13 @@
                     btn2.disabled = true;
                     btn2.className = "w-full md:w-auto px-6 bg-slate-800 text-slate-500 font-heading font-bold py-3 rounded-xl text-sm cursor-not-allowed";
                 }
-                
                 loadLogs();
             } else {
-                alert(data.error || 'Nejprve musíš splnit zadanou aktivitu, abys mohl bonus vybrat.');
+                alert(data.error || 'Nejprve musíš splnit zadanou aktivitu.');
             }
         }
 
-        function switchSection(sectionId) {
+        function switchSection(sectionId, updateHistory = true) {
             document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
             document.querySelectorAll('aside nav a').forEach(link => {
                 link.classList.remove('active', 'bg-emerald-500/10', 'text-emerald-400', 'border', 'border-emerald-500/20');
@@ -2668,6 +2219,10 @@
                 activeNav.classList.add('active', 'bg-emerald-500/10', 'text-emerald-400', 'border', 'border-emerald-500/20');
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (updateHistory) {
+                history.pushState({ section: sectionId }, '', '#' + sectionId);
+            }
         }
 
         function togglePassword(fieldId, btn) {
@@ -2680,6 +2235,7 @@
                 btn.innerText = '👁️';
             }
         }
+
         function openDeleteModal() {
             document.getElementById('delete-modal').classList.remove('hidden');
         }
@@ -2740,12 +2296,16 @@
             const customText = document.getElementById('banner-text').value || "Vydělávejte online!";
             
             const previewBox = document.getElementById('banner-preview-box');
-            previewBox.style.width = width + 'px';
-            previewBox.style.height = height + 'px';
+            if(previewBox) {
+                previewBox.style.width = width + 'px';
+                previewBox.style.height = height + 'px';
+            }
             
-            document.getElementById('preview-title').innerText = customText;
+            const previewTitle = document.getElementById('preview-title');
+            if(previewTitle) previewTitle.innerText = customText;
 
-            const refLink = document.getElementById('ref-link-display').innerText || window.location.origin + '/register.html';
+            const refLinkElem = document.getElementById('ref-link-display');
+            const refLink = refLinkElem ? refLinkElem.innerText : window.location.origin + '/register.html';
             
             const generatedHtml = `<a href="${refLink}" target="_blank" style="display:inline-block; width:${width}px; height:${height}px; background:linear-gradient(135deg, #022c22, #0f172a); border:2px solid #10b981; border-radius:16px; padding:20px; text-align:center; text-decoration:none; font-family:sans-serif; box-sizing:border-box; position:relative; overflow:hidden;">
     <span style="background:rgba(16, 185, 129, 0.2); color:#6ee7b7; padding:4px 10px; border-radius:8px; font-size:10px; font-weight:bold; border:1px solid rgba(16, 185, 129, 0.3);">NeonPayPulse</span>
@@ -2754,7 +2314,8 @@
     <div style="background:#10b981; color:#030712; font-weight:900; font-size:12px; padding:8px 12px; border-radius:10px; display:inline-block;">Připojit se hned ➔</div>
 </a>`;
 
-            document.getElementById('banner-code-output').value = generatedHtml;
+            const output = document.getElementById('banner-code-output');
+            if(output) output.value = generatedHtml;
         }
 
         function copyBannerCode() {
@@ -2775,37 +2336,11 @@
                 return;
             }
 
-            alert('Děkujeme, ' + name + '! Vaše zpráva byla úspěšně odeslána týmu podpoře. Odpovíme vám co nejdříve na ' + email + '.');
-            
+            alert('Děkujeme, ' + name + '! Vaše zpráva byla úspěšně odeslána týmu podpoře.');
             document.getElementById('contact-name').value = '';
             document.getElementById('contact-email').value = '';
             document.getElementById('contact-message').value = '';
         }
-
-        function addLiveNotif(message, coinAmount, category) {
-            const feed = document.getElementById('live-feed');
-            const div = document.createElement('div');
-            div.className = "notif-item bg-slate-950/70 border border-slate-800/60 p-3.5 rounded-2xl space-y-1";
-            div.innerHTML = `
-                <div class="flex justify-between items-center text-[10px]">
-                    <span class="opacity-60 font-semibold">${category}</span>
-                    <span class="text-emerald-400 font-black">${coinAmount > 0 ? '+' : ''}${coinAmount.toLocaleString()} coinů</span>
-                </div>
-                <p class="text-xs opacity-90">${message}</p>
-            `;
-            feed.prepend(div);
-        }
-
-        setInterval(() => {
-            const events = [
-                { msg: "Uživatel 'Karel_99' se právě zaregistroval pod tvým odkazem!", coins: 200, cat: "Nová registrace" },
-                { msg: "Tvůj referal 'Petra_X' dokončil placený průzkum.", coins: 550, cat: "Provize ze sítě" },
-                { msg: "Uživatel 'Zdenek_Net' kliknul na reklamní kampaň.", coins: 100, cat: "Provize z reklam" },
-                { msg: "Někdo nově vstoupil do 2. úrovně tvé sítě!", coins: 150, cat: "Síť 2. úroveň" }
-            ];
-            const ev = events[Math.floor(Math.random() * events.length)];
-            addLiveNotif(ev.msg, ev.coins, ev.cat);
-        }, 6000);
 
         async function loadUserData() {
             try {
@@ -2819,9 +2354,12 @@
                     
                     const fullRefLink = window.location.origin + '/register.html?ref=' + data.referralCode;
                     
-                    document.getElementById('home-ref-link').value = fullRefLink;
-                    document.getElementById('ref-code-display').innerText = data.referralCode;
-                    document.getElementById('ref-link-display').innerText = fullRefLink;
+                    const homeRef = document.getElementById('home-ref-link');
+                    if(homeRef) homeRef.value = fullRefLink;
+                    const refCode = document.getElementById('ref-code-display');
+                    if(refCode) refCode.innerText = data.referralCode;
+                    const refLinkDisp = document.getElementById('ref-link-display');
+                    if(refLinkDisp) refLinkDisp.innerText = fullRefLink;
 
                     updateBannerPreview();
                 }
@@ -2852,6 +2390,7 @@
                 const data = await response.json();
                 if (data.success) {
                     const tbody = document.querySelector('#logsTable tbody');
+                    if(!tbody) return;
                     tbody.innerHTML = '';
                     if (data.logs.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-slate-500">Zatím žádná historie.</td></tr>`;
@@ -2933,6 +2472,18 @@
             loadUserData();
             loadDailyQuest();
             updateBannerPreview();
+
+            const hash = window.location.hash.replace('#', '');
+            if (hash) {
+                switchSection(hash, false);
+            } else {
+                switchSection('home', false);
+            }
+
+            window.addEventListener('popstate', (event) => {
+                const section = event.state?.section || 'home';
+                switchSection(section, false);
+            });
         });
     </script>
 </body>
