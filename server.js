@@ -208,20 +208,20 @@ function saveDatabase() {
     return true;
 }
 
-// --- KONTROLA JEDINÉHO AKTIVNÍHO ZAŘÍZENÍ ---
+// --- KONTROLA JEDINÉHO AKTIVNÍHO ZAŘÍZENÍ PŘES TURSO ---
 const checkSingleSession = async (req, res, next) => {
     if (!req.session.username) {
         return next();
     }
     try {
+        // Vytáhneme z Turso databáze aktuální session ID, které má uživatel povolené
         const result = await db.execute({
             sql: `SELECT currentSessionId FROM users WHERE username = ?`,
             args: [req.session.username]
         });
         const user = result.rows[0];
         
-        // Pokud uživatel v DB neexistuje, nebo pokud ještě nemá v session nastavené ID (první přihlášení), 
-        // nebo pokud se ID v DB NEŠODUJE s tím v session (někdo se přihlásil jinde):
+        // Pokud session ID v prohlížeči (uložené v req.session) nesouhlasí s tím v Turso databázi:
         if (!user || !user.currentSessionId || req.session.userSessionId !== user.currentSessionId) {
             req.session.destroy(() => {
                 if (req.method === 'GET' && !req.originalUrl.startsWith('/api/')) {
@@ -232,7 +232,7 @@ const checkSingleSession = async (req, res, next) => {
             return;
         }
     } catch (err) {
-        console.error("Chyba při ověřování session:", err);
+        console.error("Chyba při ověřování v Turso:", err);
     }
     next();
 };
