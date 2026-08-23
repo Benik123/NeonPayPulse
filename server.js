@@ -85,12 +85,9 @@ async function initDatabase() {
             );
         `);
 
-        // Bezpečnostní migrace pro existující tabulku bez currentSessionId
         try {
             await db.execute(`ALTER TABLE users ADD COLUMN currentSessionId TEXT;`);
-        } catch (e) {
-            // Sloupec už pravděpodobně existuje
-        }
+        } catch (e) {}
 
         await db.execute(`
             CREATE TABLE IF NOT EXISTS logs (
@@ -211,28 +208,7 @@ function saveDatabase() {
     return true;
 }
 
-app.use((req, res, next) => {
-    if (!req.session.csrfToken) {
-        req.session.csrfToken = crypto.randomBytes(32).toString('hex');
-    }
-    res.locals.csrfToken = req.session.csrfToken;
-    next();
-});
-
-const csrfProtection = (req, res, next) => {
-    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
-        return next();
-    }
-    const clientToken = req.headers['x-csrf-token'] || (req.body && req.body._csrf);
-    if (!clientToken || clientToken !== req.session.csrfToken) {
-        return res.status(403).json({ success: false, error: 'Neplatný nebo chybějící CSRF token.' });
-    }
-    next();
-};
-
-app.use(csrfProtection);
-
-// --- KONTROLA JEDINÉHO AKTIVNÍHO ZAŘÍZENÍ ---
+// --- KONTROLA JEDINÉHO AKTIVNÍHO ZAŘÍZENÍ (PŘED CSRF) ---
 const checkSingleSession = async (req, res, next) => {
     if (!req.session.username) {
         return next();
@@ -259,6 +235,27 @@ const checkSingleSession = async (req, res, next) => {
 };
 
 app.use(checkSingleSession);
+
+app.use((req, res, next) => {
+    if (!req.session.csrfToken) {
+        req.session.csrfToken = crypto.randomBytes(32).toString('hex');
+    }
+    res.locals.csrfToken = req.session.csrfToken;
+    next();
+});
+
+const csrfProtection = (req, res, next) => {
+    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+        return next();
+    }
+    const clientToken = req.headers['x-csrf-token'] || (req.body && req.body._csrf);
+    if (!clientToken || clientToken !== req.session.csrfToken) {
+        return res.status(403).json({ success: false, error: 'Neplatný nebo chybějící CSRF token.' });
+    }
+    next();
+};
+
+app.use(csrfProtection);
 
 app.get('/api/csrf-token', (req, res) => {
     res.json({ success: true, csrfToken: req.session.csrfToken });
