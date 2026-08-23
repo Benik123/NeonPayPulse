@@ -33,15 +33,21 @@
                 <p class="text-xs text-slate-400">Vítej zpět! Přihlas se do svého účtu.</p>
             </div>
 
-            <!-- Formulář bez onsubmit, navázaný přes JS v DOMContentLoaded -->
             <form id="loginForm" class="space-y-4">
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-300">Uživatelské jméno</label>
                     <input type="text" id="username" required class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition">
                 </div>
+
+                <!-- Upravené políčko pro heslo s tlačítkem Zobrazit/Skrýt -->
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-300">Heslo</label>
-                    <input type="password" id="password" required class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition">
+                    <div class="relative">
+    <input type="password" id="password" required class="w-full bg-slate-950/85 border border-slate-800 rounded-xl px-4 py-3 pr-20 text-sm text-white focus:outline-none focus:border-emerald-500 transition">
+    <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 px-4 text-xs font-bold text-slate-900 hover:text-black focus:outline-none transition">
+        Zobrazit
+    </button>
+</div>
                 </div>
 
                 <div class="flex justify-end">
@@ -68,8 +74,24 @@
     <script>
         let csrfToken = '';
 
-        // Automatické načtení CSRF tokenu a navázání formuláře při startu stránky
         window.addEventListener('DOMContentLoaded', async () => {
+            // Logika pro tlačítko Zobrazit/Skrýt heslo
+            const togglePasswordBtn = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+
+            if (togglePasswordBtn && passwordInput) {
+                togglePasswordBtn.addEventListener('click', () => {
+                    const currentType = passwordInput.getAttribute('type');
+                    if (currentType === 'password') {
+                        passwordInput.setAttribute('type', 'text');
+                        togglePasswordBtn.innerText = 'Skrýt';
+                    } else {
+                        passwordInput.setAttribute('type', 'password');
+                        togglePasswordBtn.innerText = 'Zobrazit';
+                    }
+                });
+            }
+
             try {
                 const res = await fetch('/api/csrf-token', { credentials: 'include' });
                 const data = await res.json();
@@ -101,7 +123,7 @@
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'x-csrf-token': csrfToken // Odeslání CSRF tokenu v hlavičce
+                        'x-csrf-token': csrfToken
                     },
                     credentials: 'include', 
                     body: JSON.stringify({ username, password })

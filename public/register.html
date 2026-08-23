@@ -45,9 +45,15 @@
                     <input type="email" id="email" required class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition" placeholder="vas@email.cz">
                 </div>
 
+                <!-- Tady je upravené políčko pro heslo s tlačítkem Zobrazit -->
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-300">Heslo</label>
-                    <input type="password" id="password" required class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition">
+                    <div class="relative">
+    <input type="password" id="password" required class="w-full bg-slate-950/85 border border-slate-800 rounded-xl px-4 py-3 pr-20 text-sm text-white focus:outline-none focus:border-emerald-500 transition">
+    <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 px-4 text-xs font-bold text-slate-900 hover:text-black focus:outline-none transition">
+        Zobrazit
+    </button>
+</div>
                 </div>
                 
                 <div class="space-y-1">
@@ -97,6 +103,23 @@
                 document.getElementById('refCode').value = refParam;
             }
 
+            // Logika pro tlačítko Zobrazit/Skrýt heslo
+            const togglePasswordBtn = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+
+            if (togglePasswordBtn && passwordInput) {
+                togglePasswordBtn.addEventListener('click', () => {
+                    const currentType = passwordInput.getAttribute('type');
+                    if (currentType === 'password') {
+                        passwordInput.setAttribute('type', 'text');
+                        togglePasswordBtn.innerText = 'Skrýt';
+                    } else {
+                        passwordInput.setAttribute('type', 'password');
+                        togglePasswordBtn.innerText = 'Zobrazit';
+                    }
+                });
+            }
+
             try {
                 const res = await fetch('/api/csrf-token', { credentials: 'include' });
                 const data = await res.json();
@@ -119,7 +142,7 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const refCode = document.getElementById('refCode').value;
-            const website = document.getElementById('website').value; // OPRAVENO ZDE
+            const website = document.getElementById('website').value;
             const errorMsg = document.getElementById('error-msg');
 
             errorMsg.classList.add('hidden');
