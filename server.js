@@ -220,7 +220,9 @@ const checkSingleSession = async (req, res, next) => {
         });
         const user = result.rows[0];
         
-        if (!user || !user.currentSessionId || user.currentSessionId !== req.session.userSessionId) {
+        // Pokud uživatel v DB neexistuje, nebo pokud ještě nemá v session nastavené ID (první přihlášení), 
+        // nebo pokud se ID v DB NEŠODUJE s tím v session (někdo se přihlásil jinde):
+        if (!user || !user.currentSessionId || req.session.userSessionId !== user.currentSessionId) {
             req.session.destroy(() => {
                 if (req.method === 'GET' && !req.originalUrl.startsWith('/api/')) {
                     return res.redirect('/login.html');
