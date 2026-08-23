@@ -208,7 +208,7 @@ function saveDatabase() {
     return true;
 }
 
-// --- OPRAVENÁ KONTROLA JEDINÉHO AKTIVNÍHO ZAŘÍZENÍ ---
+// --- KONTROLA JEDINÉHO AKTIVNÍHO ZAŘÍZENÍ ---
 const checkSingleSession = async (req, res, next) => {
     if (!req.session.username) {
         return next();
@@ -220,7 +220,6 @@ const checkSingleSession = async (req, res, next) => {
         });
         const user = result.rows[0];
         
-        // Pokud uživatel v databázi nemá session ID nebo se neshoduje s tím v prohlížeči
         if (!user || !user.currentSessionId || user.currentSessionId !== req.session.userSessionId) {
             req.session.destroy(() => {
                 if (req.method === 'GET' && !req.originalUrl.startsWith('/api/')) {
