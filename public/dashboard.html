@@ -469,19 +469,16 @@
     </div>
 </div>
 
-<!-- Správná CPX Script Tag Inicializace -->
 <script>
     fetch('/api/user')
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                // Definice vzhledu pro kontejner
                 const script1 = {
                     div_id: "cpx-survey-container",
                     theme_style: 12
                 };
 
-                // Přesná struktura, kterou skript vyžaduje v objektu window.config
                 window.config = {
                     general_config: {
                         app_id: 35944,
@@ -493,7 +490,6 @@
                     script_config: [script1]
                 };
 
-                // Vložení oficiální CPX knihovny
                 const cpxScript = document.createElement('script');
                 cpxScript.type = 'text/javascript';
                 cpxScript.src = 'https://cdn.cpx-research.com/assets/js/script_tag_v2.0.js';
