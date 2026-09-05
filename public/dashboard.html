@@ -447,31 +447,63 @@
          
 
             <!-- Dotazníky -->
-            <div id="section-surveys" class="section space-y-6">
-                <div class="space-y-2">
-                    <h1 class="text-3xl font-heading font-black text-white">Dostupné dotazníky</h1>
-                    <p class="text-sm text-slate-400">Sdílejte svůj názor v průzkumech trhu a nechte se štědře odměnit.</p>
-                </div>
-                <div class="bg-gradient-to-r from-purple-950/40 via-slate-900/60 to-slate-900/80 border border-purple-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
-                    <div class="inline-flex items-center space-x-2 bg-purple-500/20 text-purple-300 px-3 py-1 rounded-xl text-xs font-bold border border-purple-500/30">
-                        <span>ℹ️ Jak fungují dotazníky a jak maximalizovat zisk?</span>
-                    </div>
-                    <div class="text-xs text-slate-300 leading-relaxed space-y-2 mt-3">
-                        <p>Dotazníky jsou vždy zaměřené na konkrétní <strong>cílové skupiny</strong> (podle věku, zájmů atd.). Na začátku každého dotazníku proběhne krátké ověřovací kolo. Pokud do skupiny nezapadnete, zkuste prostě další. Úspěšné dokončení ale znamená okamžitou a štědrou odměnu!</p>
-                        <p class="text-purple-400 font-bold mt-2">💡 Sdílejte možnost výdělku: Dotazníky vyplňují miliony lidí po celém světě. Pokud je pozvete přes váš odkaz, za každý jejich vyplněný průzkum získáte podíl z jejich odměny napořád.</p>
-                    </div>
-                </div>
-                <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl">
-                    <div class="flex justify-between items-center p-4 bg-slate-950/50 border border-slate-800 rounded-2xl">
-                        <div>
-                            <strong class="text-white text-sm">Průzkum o mobilech</strong><br>
-                            <span class="text-xs text-emerald-400 font-semibold">Odměna: 2 000 coinů (20 Kč)</span>
-                        </div>
-                        <button onclick="doAction('survey')" class="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-heading font-bold text-xs rounded-xl transition cursor-pointer shadow-md">Vyplnit</button>
-                    </div>
-                </div>
-            </div>
+<div id="section-surveys" class="section space-y-6">
+    <div class="space-y-2">
+        <h1 class="text-3xl font-heading font-black text-white">Dostupné dotazníky</h1>
+        <p class="text-sm text-slate-400">Sdílejte svůj názor v průzkumech trhu a nechte se štědře odměnit.</p>
+    </div>
+    
+    <div class="bg-gradient-to-r from-purple-950/40 via-slate-900/60 to-slate-900/80 border border-purple-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
+        <div class="inline-flex items-center space-x-2 bg-purple-500/20 text-purple-300 px-3 py-1 rounded-xl text-xs font-bold border border-purple-500/30">
+            <span>ℹ️ Jak fungují dotazníky a jak maximalizovat zisk?</span>
+        </div>
+        <div class="text-xs text-slate-300 leading-relaxed space-y-2 mt-3">
+            <p>Dotazníky jsou vždy zaměřené na konkrétní <strong>cílové skupiny</strong> (podle věku, zájmů atd.). Na začátku každého dotazníku proběhne krátké ověřovací kolo. Pokud do skupiny nezapadnete, zkuste prostě další. Úspěšné dokončení ale znamená okamžitou a štědrou odměnu!</p>
+            <p class="text-purple-400 font-bold mt-2">💡 Sdílejte možnost výdělku: Dotazníky vyplňují miliony lidí po celém světě. Pokud je pozvete přes váš odkaz, za každý jejich vyplněný průzkum získáte podíl z jejich odměny napořád.</p>
+        </div>
+    </div>
 
+    <!-- CPX Research Survey Wall Container -->
+    <div id="cpx-survey-container" class="bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl min-h-[500px]">
+        <!-- Sem CPX automaticky nahraje seznam dotazníků -->
+    </div>
+</div>
+
+<!-- Správná CPX Script Tag Inicializace -->
+<script>
+    fetch('/api/user')
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Definice vzhledu pro kontejner
+                const script1 = {
+                    div_id: "cpx-survey-container",
+                    theme_style: 12
+                };
+
+                // Přesná struktura, kterou skript vyžaduje v objektu window.config
+                window.config = {
+                    general_config: {
+                        app_id: 35944,
+                        ext_user_id: data.id.toString(),
+                        username: data.username,
+                        subid_1: data.username,
+                        subid_2: ""
+                    },
+                    script_config: [script1]
+                };
+
+                // Vložení oficiální CPX knihovny
+                const cpxScript = document.createElement('script');
+                cpxScript.type = 'text/javascript';
+                cpxScript.src = 'https://cdn.cpx-research.com/assets/js/script_tag_v2.0.js';
+                document.body.appendChild(cpxScript);
+            } else {
+                console.error("Uživatel není přihlášen, CPX nelze načíst.");
+            }
+        })
+        .catch(err => console.error("Chyba při načítání uživatele pro CPX:", err));
+</script>
             <!-- Videa -->
             <div id="section-videos" class="section space-y-6">
                 <div class="space-y-2">

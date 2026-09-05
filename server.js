@@ -26,12 +26,13 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://*.cpx-research.com", "https://*.cpx-research.assets"],
             scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'"],
+            connectSrc: ["'self'", "https://*.cpx-research.com", "https://*.cpx-research.assets"],
+            frameSrc: ["'self'", "https://*.cpx-research.com", "https://*.cpx-research.assets"],
             frameAncestors: ["'none'"]
         }
     },
@@ -39,7 +40,6 @@ app.use(helmet({
     referrerPolicy: { policy: 'same-origin' },
     hidePoweredBy: true
 }));
-
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
