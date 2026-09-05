@@ -222,7 +222,13 @@ const csrfProtection = (req, res, next) => {
     next();
 };
 
-app.use(csrfProtection);
+// Vyloučíme externí webhooky (jako CPX postback) z CSRF kontroly, protože přicházejí ze serverů třetí strany
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api/cpx-postback')) {
+        return next();
+    }
+    return csrfProtection(req, res, next);
+});
 
 app.get('/api/csrf-token', (req, res) => {
     res.json({ success: true, csrfToken: req.session.csrfToken });
@@ -247,6 +253,73 @@ app.get('/api/admin/security-logs', async (req, res) => {
 
     const result = await db.execute(`SELECT * FROM security_logs ORDER BY id DESC LIMIT 50`);
     res.json({ success: true, logs: result.rows || [] });
+});
+
+// --- CPX RESEARCH POSTBACK ENDPOINT ---
+app.get('/api/cpx-postback', async (req, res) => {
+    const { status, trans_id, user_id, amount_local } = req.query;
+
+    if (!user_id || !trans_id || !status) {
+        return res.status(400).send('Missing required parameters');
+    }
+
+    const isCompleted = status === '1';
+    const isCanceled = status === '2';
+
+    if (!isCompleted && !isCanceled) {
+        return res.status(400).send('Invalid status');
+    }
+
+    const rewardAmount = parseFloat(amount_local) || 0.00;
+
+    try {
+        const userResult = await db.execute({
+            sql: `SELECT username, balance FROM users WHERE id = ? OR username = ?`,
+            args: [user_id, user_id]
+        });
+        const user = userResult.rows[0];
+
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
+
+        const username = user.username;
+        let newBalance = user.balance;
+
+        const tx = await db.transaction("write");
+        try {
+            if (isCompleted) {
+                newBalance = Number((user.balance + rewardAmount).toFixed(2));
+                await tx.execute({
+                    sql: `UPDATE users SET balance = ? WHERE username = ?`,
+                    args: [newBalance, username]
+                });
+                await tx.execute({
+                    sql: `INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`,
+                    args: [username, 'cpx-survey-completed', rewardAmount]
+                });
+            } else if (isCanceled) {
+                newBalance = Number((Math.max(0, user.balance - rewardAmount)).toFixed(2));
+                await tx.execute({
+                    sql: `UPDATE users SET balance = ? WHERE username = ?`,
+                    args: [newBalance, username]
+                });
+                await tx.execute({
+                    sql: `INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`,
+                    args: [username, 'cpx-survey-canceled', -rewardAmount]
+                });
+            }
+            await tx.commit();
+        } catch (txErr) {
+            await tx.rollback();
+            throw txErr;
+        }
+
+        return res.send('OK');
+    } catch (err) {
+        console.error('Chyba v CPX Postbacku:', err);
+        return res.status(500).send('Internal Server Error');
+    }
 });
 
 app.post('/api/contact', contactLimiter, [
