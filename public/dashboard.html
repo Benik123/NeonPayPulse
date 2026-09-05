@@ -464,9 +464,8 @@
     </div>
 
     <!-- CPX Research Survey Wall Container -->
-    <div id="cpx-survey-container" class="bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl min-h-[500px]">
-        <!-- Sem CPX automaticky nahraje seznam dotazníků -->
-    </div>
+<div id="cpx-survey-container" class="bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl min-h-[500px]">
+    <!-- Sem CPX automaticky nahraje seznam dotazníků -->
 </div>
 
 <script>
@@ -474,11 +473,7 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                const script1 = {
-                    div_id: "cpx-survey-container",
-                    theme_style: 12
-                };
-
+                // 1. Nejprve nastavíme konfiguraci
                 window.config = {
                     general_config: {
                         app_id: 35944,
@@ -487,9 +482,15 @@
                         subid_1: data.username,
                         subid_2: ""
                     },
-                    script_config: [script1]
+                    script_config: [
+                        {
+                            div_id: "cpx-survey-container",
+                            theme_style: 12
+                        }
+                    ]
                 };
 
+                // 2. A až potom vytvoříme a připojíme skript, aby měl data k dispozici
                 const cpxScript = document.createElement('script');
                 cpxScript.type = 'text/javascript';
                 cpxScript.src = 'https://cdn.cpx-research.com/assets/js/script_tag_v2.0.js';
