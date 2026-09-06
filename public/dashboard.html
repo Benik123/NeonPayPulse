@@ -457,18 +457,9 @@
         </div>
     </div>
 
-    <!-- Přímé spuštění CPX nabídkové stěny -->
-    <div class="bg-slate-900/60 border border-slate-800/80 p-10 rounded-3xl backdrop-blur-xl shadow-xl text-center space-y-6">
-        <div class="w-16 h-16 bg-purple-500/20 text-purple-400 rounded-3xl mx-auto flex items-center justify-center text-3xl font-black border border-purple-500/30">📋</div>
-        <div class="space-y-2 max-w-md mx-auto">
-            <h3 class="text-xl font-heading font-bold text-white">Vstupní brána do průzkumů trhu</h3>
-            <p class="text-xs text-slate-400 leading-relaxed">Kliknutím na tlačítko níže se vám otevře oficiální nabídková stěna plná dostupných dotazníků s okamžitým připsáním coinů po dokončení.</p>
-        </div>
-        <div class="pt-2">
-            <a id="cpx-direct-link" href="#" target="_blank" class="inline-block px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-heading font-black text-xs rounded-xl transition shadow-lg shadow-purple-600/30 cursor-pointer">
-                Otevřít nabídkovou stěnu dotazníků ➔
-            </a>
-        </div>
+    <!-- CPX Oficiální kontejner pro nabídkovou stěnu -->
+    <div id="cpx-survey-container" class="bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl min-h-[700px]">
+        <div class="text-center text-slate-400 py-20">Načítám nabídkovou stěnu dotazníků...</div>
     </div>
 </div>
 
@@ -1520,25 +1511,48 @@
         }
 
         function initCPXSurveyWall() {
-            const linkBtn = document.getElementById('cpx-direct-link');
-            if (!linkBtn) return;
+            const container = document.getElementById('cpx-survey-container');
+            if (!container) return;
+            if (container.dataset.loaded === "true") return;
 
             fetch('/api/user', { credentials: 'include' })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        const appId = 35944;
-                        const userId = data.id.toString();
-                        const username = data.username;
+                        // Oficiální globální konfigurace pro CPX script tag
+                        window.config = {
+                            general_config: {
+                                app_id: 35944,
+                                ext_user_id: data.id.toString(),
+                                username: data.username,
+                                subid_1: data.username,
+                                subid_2: ""
+                            },
+                            script_config: [
+                                {
+                                    div_id: "cpx-survey-container",
+                                    theme_style: 1
+                                }
+                            ]
+                        };
 
-                        linkBtn.href = `https://offerwall.cpx-research.com/index.php?app_id=${appId}&ext_user_id=${userId}&subid_1=${username}`;
+                        // Dynamické vložení oficiálního CPX skriptu
+                        if (!document.getElementById('cpx-script-tag')) {
+                            const cpxScript = document.createElement('script');
+                            cpxScript.id = 'cpx-script-tag';
+                            cpxScript.type = 'text/javascript';
+                            cpxScript.src = 'https://cdn.cpx-research.com/assets/js/script_tag_v2.0.js';
+                            document.body.appendChild(cpxScript);
+                        }
+
+                        container.dataset.loaded = "true";
                     } else {
-                        linkBtn.href = "#";
-                        linkBtn.onclick = (e) => { e.preventDefault(); alert('Pro spuštění dotazníků se musíte přihlásit.'); };
+                        container.innerHTML = `<div class="text-center text-red-400 py-20 text-xs">Pro zobrazení dotazníků se musíte přihlásit.</div>`;
                     }
                 })
                 .catch(err => {
-                    console.error("Chyba při sestavování CPX odkazu:", err);
+                    console.error("Chyba při inicializaci CPX:", err);
+                    container.innerHTML = `<div class="text-center text-red-400 py-20 text-xs">Nepodařilo se načíst dotazníky.</div>`;
                 });
         }
 
