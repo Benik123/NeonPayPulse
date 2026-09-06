@@ -459,14 +459,16 @@
                 </div>
 
                 <!-- Přepínač mezi poskytovateli dotazníků -->
-                <div class="flex items-center space-x-3 border-b border-slate-800 pb-4">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Poskytovatel:</span>
-                    <button onclick="switchSurveyProvider('cpx')" id="surveys-btn-cpx" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-purple-600 text-white shadow-md cursor-pointer">
-                        CPX Research (Hlavní stěna)
-                    </button>
-                    <button onclick="switchSurveyProvider('bitlabs')" id="surveys-btn-bitlabs" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-slate-400 hover:text-white cursor-pointer">
-                        BitLabs (Alternativní stěna)
-                    </button>
+                <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 border-b border-slate-800 pb-5">
+                    <span class="text-xs font-heading font-black text-slate-300 uppercase tracking-widest">Výběr poskytovatele:</span>
+                    <div class="flex items-center space-x-3">
+                        <button onclick="switchSurveyProvider('cpx')" id="surveys-btn-cpx" class="px-5 py-3 rounded-2xl text-xs font-bold transition bg-purple-600 text-white shadow-lg shadow-purple-600/30 cursor-pointer">
+                            ⭐ CPX Research
+                        </button>
+                        <button onclick="switchSurveyProvider('bitlabs')" id="surveys-btn-bitlabs" class="px-5 py-3 rounded-2xl text-xs font-bold transition bg-slate-900 border border-slate-800 text-slate-300 hover:text-white cursor-pointer">
+                            🚀 BitLabs
+                        </button>
+                    </div>
                 </div>
 
                 <!-- CPX Research kontejner -->
