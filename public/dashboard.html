@@ -74,8 +74,8 @@
                     <span>💬</span> <span>Mikroúkoly & Sítě</span>
                 </a>
 
-           
-                
+            
+               
                 <a onclick="switchSection('surveys')" id="nav-surveys" class="nav-item flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-slate-400 hover:text-slate-200 hover:bg-slate-900">
                     <span>📋</span> <span>Dotazníky</span>
                 </a>
@@ -416,6 +416,8 @@
                 </div>
             </div>
 
+            
+
             <!-- MIKROÚKOLY A SOCIÁLNÍ SÍTĚ -->
             <div id="section-socials" class="section space-y-6">
                 <div class="space-y-2">
@@ -442,29 +444,63 @@
                 </div>
             </div>
 
+         
+
             <!-- Dotazníky -->
-            <div id="section-surveys" class="section space-y-6">
-                <div class="space-y-2">
-                    <h1 class="text-3xl font-heading font-black text-white">Dostupné dotazníky</h1>
-                    <p class="text-sm text-slate-400">Sdílejte svůj názor v průzkumech trhu a nechte se štědře odměnit.</p>
-                </div>
-                
-                <div class="bg-gradient-to-r from-purple-950/40 via-slate-900/60 to-slate-900/80 border border-purple-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
-                    <div class="inline-flex items-center space-x-2 bg-purple-500/20 text-purple-300 px-3 py-1 rounded-xl text-xs font-bold border border-purple-500/30">
-                        <span>ℹ️ Jak fungují dotazníky a jak maximalizovat zisk?</span>
-                    </div>
-                    <div class="text-xs text-slate-300 leading-relaxed space-y-2 mt-3">
-                        <p>Dotazníky jsou vždy zaměřené na konkrétní <strong>cílové skupiny</strong> (podle věku, zájmů atd.). Na začátku každého dotazníku proběhne krátké ověřovací kolo. Pokud do skupiny nezapadnete, zkuste prostě další. Úspěšné dokončení ale znamená okamžitou a štědrou odměnu!</p>
-                        <p class="text-purple-400 font-bold mt-2">💡 Sdílejte možnost výdělku: Dotazníky vyplňují miliony lidí po celém světě. Pokud je pozvete přes váš odkaz, za každý jejich vyplněný průzkum získáte podíl z jejich odměny napořád.</p>
-                    </div>
-                </div>
+<div id="section-surveys" class="section space-y-6">
+    <div class="space-y-2">
+        <h1 class="text-3xl font-heading font-black text-white">Dostupné dotazníky</h1>
+        <p class="text-sm text-slate-400">Sdílejte svůj názor v průzkumech trhu a nechte se štědře odměnit.</p>
+    </div>
+    
+    <div class="bg-gradient-to-r from-purple-950/40 via-slate-900/60 to-slate-900/80 border border-purple-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
+        <div class="inline-flex items-center space-x-2 bg-purple-500/20 text-purple-300 px-3 py-1 rounded-xl text-xs font-bold border border-purple-500/30">
+            <span>ℹ️ Jak fungují dotazníky a jak maximalizovat zisk?</span>
+        </div>
+        <div class="text-xs text-slate-300 leading-relaxed space-y-2 mt-3">
+            <p>Dotazníky jsou vždy zaměřené na konkrétní <strong>cílové skupiny</strong> (podle věku, zájmů atd.). Na začátku každého dotazníku proběhne krátké ověřovací kolo. Pokud do skupiny nezapadnete, zkuste prostě další. Úspěšné dokončení ale znamená okamžitou a štědrou odměnu!</p>
+            <p class="text-purple-400 font-bold mt-2">💡 Sdílejte možnost výdělku: Dotazníky vyplňují miliony lidí po celém světě. Pokud je pozvete přes váš odkaz, za každý jejich vyplněný průzkum získáte podíl z jejich odměny napořád.</p>
+        </div>
+    </div>
 
-                <!-- CPX Research Survey Wall Container -->
-                <div id="cpx-survey-container" class="bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl min-h-[500px]">
-                    <!-- Sem CPX automaticky nahraje seznam dotazníků -->
-                </div>
-            </div>
+    <!-- CPX Research Survey Wall Container -->
+    <div id="cpx-survey-container" class="bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl min-h-[500px]">
+        <!-- Sem CPX automaticky nahraje seznam dotazníků -->
+    </div>
+</div>
 
+<script>
+    fetch('/api/user')
+        .then(res => res.json())
+        .then(data => {
+            console.log("DEBUG - Načtená data uživatele:", data);
+            if (data.success) {
+                window.config = {
+                    general_config: {
+                        app_id: 35944,
+                        ext_user_id: data.id.toString(),
+                        username: data.username,
+                        subid_1: data.username,
+                        subid_2: ""
+                    },
+                    script_config: [
+                        {
+                            div_id: "cpx-survey-container",
+                            theme_style: 12
+                        }
+                    ]
+                };
+
+                const cpxScript = document.createElement('script');
+                cpxScript.type = 'text/javascript';
+                cpxScript.src = 'https://cdn.cpx-research.com/assets/js/script_tag_v2.0.js';
+                document.body.appendChild(cpxScript);
+            } else {
+                console.error("Uživatel není přihlášen, CPX nelze načíst.");
+            }
+        })
+        .catch(err => console.error("Chyba při načítání uživatele pro CPX:", err));
+</script>
             <!-- Videa -->
             <div id="section-videos" class="section space-y-6">
                 <div class="space-y-2">
@@ -879,127 +915,129 @@
             </div>
 
            <!-- Výplaty -->
-           <div id="section-payouts" class="section space-y-6">
-                <div class="space-y-2">
-                    <h1 class="text-3xl font-heading font-black text-white">Výplaty peněz 💳</h1>
-                    <p class="text-sm text-slate-400">Minimální částka pro výplatu je <strong>200 Kč (20 000 coinů)</strong>. Výplaty procházejí ručním auditem před odesláním.</p>
+    <div id="section-payouts" class="section space-y-6">
+        <div class="space-y-2">
+            <h1 class="text-3xl font-heading font-black text-white">Výplaty peněz 💳</h1>
+            <p class="text-sm text-slate-400">Minimální částka pro výplatu je <strong>200 Kč (20 000 coinů)</strong>. Výplaty procházejí ručním auditem před odesláním.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
+                <div class="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center font-bold text-lg border border-emerald-500/30">⚡</div>
+                <h3 class="font-heading font-bold text-white text-base">Rychlé zpracování</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">Žádosti o výplatu vyřizujeme v průběhu 24–48 hodin. VIP uživatelé mají přednostní odbavení.</p>
+            </div>
+            <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
+                <div class="w-10 h-10 bg-teal-500/20 text-teal-400 rounded-2xl flex items-center justify-center font-bold text-lg border border-teal-500/30">🛡️</div>
+                <h3 class="font-heading font-bold text-base text-white">Bezpečný audit</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">Každá výplata prochází ruční kontrolou, aby byla zajištěna stoprocentní ochrana tvých financí.</p>
+            </div>
+            <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
+                <div class="w-10 h-10 bg-cyan-500/20 text-cyan-400 rounded-2xl flex items-center justify-center font-bold text-lg border border-cyan-500/30">📊</div>
+                <h3 class="font-heading font-bold text-base text-white">Jistota a přehled</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">Žádné skryté zady – vše máš pod naprostou kontrolou přímo ve svém dashboardu.</p>
+            </div>
+        </div>
+
+        <div class="card-box bg-slate-900/60 border border-slate-800/80 p-8 rounded-3xl backdrop-blur-xl shadow-xl space-y-6">
+            <h3 class="text-lg font-heading font-bold text-white">Zadejte platební údaje</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- PayPal -->
+                <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl space-y-3">
+                    <div class="flex items-center space-x-2">
+                        <input type="radio" name="payout-method" id="method-paypal" class="accent-emerald-500 cursor-pointer" checked>
+                        <label for="method-paypal" class="font-bold text-xs text-white cursor-pointer">PayPal účet</label>
+                    </div>
+                    <input type="email" id="payout-paypal-input" placeholder="vas.email@paypal.com" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
-                        <div class="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center font-bold text-lg border border-emerald-500/30">⚡</div>
-                        <h3 class="font-heading font-bold text-white text-base">Rychlé zpracování</h3>
-                        <p class="text-xs text-slate-400 leading-relaxed">Žádosti o výplatu vyřizujeme v průběhu 24–48 hodin. VIP uživatelé mají přednostní odbavení.</p>
+                <!-- Bankovní účet IBAN -->
+                <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl space-y-3">
+                    <div class="flex items-center space-x-2">
+                        <input type="radio" name="payout-method" id="method-iban" class="accent-emerald-500 cursor-pointer">
+                        <label for="method-iban" class="font-bold text-xs text-white cursor-pointer">Bankovní účet (IBAN)</label>
                     </div>
-                    <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
-                        <div class="w-10 h-10 bg-teal-500/20 text-teal-400 rounded-2xl flex items-center justify-center font-bold text-lg border border-teal-500/30">🛡️</div>
-                        <h3 class="font-heading font-bold text-base text-white">Bezpečný audit</h3>
-                        <p class="text-xs text-slate-400 leading-relaxed">Každá výplata prochází ruční kontrolou, aby byla zajištěna stoprocentní ochrana tvých financí.</p>
-                    </div>
-                    <div class="card-box bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
-                        <div class="w-10 h-10 bg-cyan-500/20 text-cyan-400 rounded-2xl flex items-center justify-center font-bold text-lg border border-cyan-500/30">📊</div>
-                        <h3 class="font-heading font-bold text-base text-white">Jistota a přehled</h3>
-                        <p class="text-xs text-slate-400 leading-relaxed">Žádné skryté zady – vše máš pod naprostou kontrolou přímo ve svém dashboardu.</p>
-                    </div>
+                    <input type="text" id="payout-iban-input" placeholder="CZ00 0000 0000 0000..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
                 </div>
 
-                <div class="card-box bg-slate-900/60 border border-slate-800/80 p-8 rounded-3xl backdrop-blur-xl shadow-xl space-y-6">
-                    <h3 class="text-lg font-heading font-bold text-white">Zadejte platební údaje</h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <!-- PayPal -->
-                        <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl space-y-3">
-                            <div class="flex items-center space-x-2">
-                                <input type="radio" name="payout-method" id="method-paypal" class="accent-emerald-500 cursor-pointer" checked>
-                                <label for="method-paypal" class="font-bold text-xs text-white cursor-pointer">PayPal účet</label>
-                            </div>
-                            <input type="email" id="payout-paypal-input" placeholder="vas.email@paypal.com" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
-                        </div>
-
-                        <!-- Bankovní účet IBAN -->
-                        <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl space-y-3">
-                            <div class="flex items-center space-x-2">
-                                <input type="radio" name="payout-method" id="method-iban" class="accent-emerald-500 cursor-pointer">
-                                <label for="method-iban" class="font-bold text-xs text-white cursor-pointer">Bankovní účet (IBAN)</label>
-                            </div>
-                            <input type="text" id="payout-iban-input" placeholder="CZ00 0000 0000 0000..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
-                        </div>
-
-                        <!-- Platební karta -->
-                        <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl space-y-3">
-                            <div class="flex items-center space-x-2">
-                                <input type="radio" name="payout-method" id="method-card" class="accent-emerald-500 cursor-pointer">
-                                <label for="method-card" class="font-bold text-xs text-white cursor-pointer">Platební karta</label>
-                            </div>
-                            <input type="text" id="payout-card-input" placeholder="4000 1234 5678 9010" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
-                        </div>
+                <!-- Platební karta -->
+                <div class="bg-slate-950/60 border border-slate-800 p-5 rounded-2xl space-y-3">
+                    <div class="flex items-center space-x-2">
+                        <input type="radio" name="payout-method" id="method-card" class="accent-emerald-500 cursor-pointer">
+                        <label for="method-card" class="font-bold text-xs text-white cursor-pointer">Platební karta</label>
                     </div>
-
-                    <!-- Informace o fixním poplatku -->
-                    <div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-xs text-emerald-300 space-y-1">
-                        <strong>ℹ️ Informace k poplatkům a zpracování:</strong>
-                        <p>NeonPayPulse si nebere žádné skryté provize. Z každé schválené výplaty se odečítá pouze symbolický fixní poplatek <strong>20 Kč</strong> na pokrytí transakčních nákladů platební brány (bez ohledu na výši vybírané částky). Žádosti podléhají manuálnímu auditu (zpracování do 48 hod).</p>
-                    </div>
-
-                    <div class="pt-2">
-                        <button onclick="requestPayout()" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-heading font-black text-xs rounded-xl transition cursor-pointer shadow-lg shadow-emerald-500/25">
-                            Odeslat žádost o výplatu (min. 200 Kč, poplatek 20 Kč) ➔
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 📊 TABULKA HISTORIE VÝPLAT -->
-                <div class="card-box bg-slate-900/60 border border-slate-800/80 p-8 rounded-3xl backdrop-blur-xl shadow-xl space-y-6">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-lg font-heading font-bold text-white">Historie výplat</h3>
-                        <span class="text-xs text-slate-400">Přehled vašich transakcí a požadavků</span>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider font-semibold">
-                                    <th class="py-3 px-4">ID / Datum</th>
-                                    <th class="py-3 px-4">Metoda</th>
-                                    <th class="py-3 px-4">Požadováno</th>
-                                    <th class="py-3 px-4">Po poplatku (20 Kč)</th>
-                                    <th class="py-3 px-4">Stav</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-800/60 text-xs text-slate-300">
-                                <tr class="hover:bg-slate-800/30 transition">
-                                    <td class="py-4 px-4 font-mono">
-                                        <div class="text-white font-bold">#NPP-8492</div>
-                                        <div class="text-[10px] text-slate-500">24.08.2026, 14:20</div>
-                                    </td>
-                                    <td class="py-4 px-4 font-medium text-white">PayPal (vas.email@...)</td>
-                                    <td class="py-4 px-4 text-slate-300 font-semibold">500 Kč</td>
-                                    <td class="py-4 px-4 text-emerald-400 font-bold">480 Kč</td>
-                                    <td class="py-4 px-4">
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                                            ✓ Schváleno & Odesláno
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-slate-800/30 transition">
-                                    <td class="py-4 px-4 font-mono">
-                                        <div class="text-white font-bold">#NPP-9104</div>
-                                        <div class="text-[10px] text-slate-500">26.08.2026, 09:15</div>
-                                    </td>
-                                    <td class="py-4 px-4 font-medium text-white">Bankovní účet (IBAN)</td>
-                                    <td class="py-4 px-4 text-slate-300 font-semibold">250 Kč</td>
-                                    <td class="py-4 px-4 text-emerald-400 font-bold">230 Kč</td>
-                                    <td class="py-4 px-4">
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                                            ⏳ Čeká na audit
-                                        </span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <input type="text" id="payout-card-input" placeholder="4000 1234 5678 9010" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition">
                 </div>
             </div>
+
+            <!-- Informace o fixním poplatku -->
+            <div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-xs text-emerald-300 space-y-1">
+                <strong>ℹ️ Informace k poplatkům a zpracování:</strong>
+                <p>NeonPayPulse si nebere žádné skryté provize. Z každé schválené výplaty se odečítá pouze symbolický fixní poplatek <strong>20 Kč</strong> na pokrytí transakčních nákladů platební brány (bez ohledu na výši vybírané částky). Žádosti podléhají manuálnímu auditu (zpracování do 48 hod).</p>
+            </div>
+
+            <div class="pt-2">
+                <button onclick="requestPayout()" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-heading font-black text-xs rounded-xl transition cursor-pointer shadow-lg shadow-emerald-500/25">
+                    Odeslat žádost o výplatu (min. 200 Kč, poplatek 20 Kč) ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- 📊 TABULKA HISTORIE VÝPLAT -->
+        <div class="card-box bg-slate-900/60 border border-slate-800/80 p-8 rounded-3xl backdrop-blur-xl shadow-xl space-y-6">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-heading font-bold text-white">Historie výplat</h3>
+                <span class="text-xs text-slate-400">Přehled vašich transakcí a požadavků</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider font-semibold">
+                            <th class="py-3 px-4">ID / Datum</th>
+                            <th class="py-3 px-4">Metoda</th>
+                            <th class="py-3 px-4">Požadováno</th>
+                            <th class="py-3 px-4">Po poplatku (20 Kč)</th>
+                            <th class="py-3 px-4">Stav</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 text-xs text-slate-300">
+                        <!-- Ukázkový řádek 1 -->
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="py-4 px-4 font-mono">
+                                <div class="text-white font-bold">#NPP-8492</div>
+                                <div class="text-[10px] text-slate-500">24.08.2026, 14:20</div>
+                            </td>
+                            <td class="py-4 px-4 font-medium text-white">PayPal (vas.email@...)</td>
+                            <td class="py-4 px-4 text-slate-300 font-semibold">500 Kč</td>
+                            <td class="py-4 px-4 text-emerald-400 font-bold">480 Kč</td>
+                            <td class="py-4 px-4">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                    ✓ Schváleno & Odesláno
+                                </span>
+                            </td>
+                        </tr>
+                        <!-- Ukázkový řádek 2 -->
+                        <tr class="hover:bg-slate-800/30 transition">
+                            <td class="py-4 px-4 font-mono">
+                                <div class="text-white font-bold">#NPP-9104</div>
+                                <div class="text-[10px] text-slate-500">26.08.2026, 09:15</div>
+                            </td>
+                            <td class="py-4 px-4 font-medium text-white">Bankovní účet (IBAN)</td>
+                            <td class="py-4 px-4 text-slate-300 font-semibold">250 Kč</td>
+                            <td class="py-4 px-4 text-emerald-400 font-bold">230 Kč</td>
+                            <td class="py-4 px-4">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                    ⏳ Čeká na audit
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
             <!-- Nastavení -->
             <div id="section-settings" class="section space-y-6">
@@ -1149,50 +1187,49 @@
             </div>
 
            <!-- Obchodní podmínky (VOP) -->
-           <div id="section-vop" class="section space-y-6">
-                <div class="space-y-2">
-                    <h1 class="text-3xl font-heading font-black text-white">Podmínky a pravidla (VOP)</h1>
-                    <p class="text-sm text-slate-400">Dodržujte naše pravidla, abyste předešli blokaci účtu.</p>
-                </div>
+    <div id="section-vop" class="section space-y-6">
+        <div class="space-y-2">
+            <h1 class="text-3xl font-heading font-black text-white">Podmínky a pravidla (VOP)</h1>
+            <p class="text-sm text-slate-400">Dodržujte naše pravidla, abyste předešli blokaci účtu.</p>
+        </div>
 
-                <div class="card-box bg-slate-900/60 border border-slate-800/80 p-8 rounded-3xl backdrop-blur-xl shadow-xl space-y-6 text-sm text-slate-300 leading-relaxed">
-                    <div class="space-y-2 pb-4 border-b border-slate-800/80">
-                        <h3 class="text-lg font-heading font-bold text-white">Identifikace provozovatele</h3>
-                        <p>
-                            Provozovatelem platformy je fyzická osoba podnikající na základě živnostenského oprávnění.<br>
-                            <strong class="text-white block">IČO: 29926467</strong>
-                            <span class="text-slate-400 font-mono block">Sídlo: Sokolská 1883/8</span>
-                            <span class="text-slate-400 font-mono">120 00 Praha 2 - Nové Město</span>
-                        </p>
-                    </div>
-
-                    <div class="space-y-2">
-                        <h3 class="text-lg font-heading font-bold text-white">1. Ruční schvalování výplat a bezpečnostní audity</h3>
-                        <p><strong>Žádné výplaty neprobíhají automaticky.</strong> Každá žádost o výběr peněz prochází důkladným manuálním bezpečnostním auditem a kontrolou ze strany administrátora. Platforma si vyhrazuje právo ověřit původ veškerých nasbíraných coinů, zejména u uživatelů čerpajících odměny z referral sítí.</p>
-                    </div>
-
-                    <div class="space-y-2">
-                        <h3 class="text-lg font-heading font-bold text-white">2. Ochrana proti podvodům a zákaz Multi-Accountingu</h3>
-                        <p>Je přísně zakázáno vytvářet více než jeden uživatelský účet (multi-accounting), zejména pak registrovat nové účty pod svým vlastním referral odkazem za úččelem neoprávněného zisku. Stejně tak je zakázáno využívat VPN, proxy servery nebo jiná řešení pro skrývání identity. Detekce takového chování vede k okamžité a trvalé blokaci všech přidružených účtů a zabavení nasbíraných prostředků.</p>
-                    </div>
-
-                    <div class="space-y-2">
-                        <h3 class="text-lg font-heading font-bold text-white">3. Pravidla pro testování her, webů a psaní recenzí</h3>
-                        <p>Uživatelé jsou povinni dodržovat pravidla třetích stran (partnerských herních studií a inzerentů). Jakékoliv podvádění při plnění herních výzev, používání generátorů screenů nebo odesílání zkopírovaných a plagiátorských recenzí je důvodem k okamžitému zamítnutí odměny a zablokování účtu.</p>
-                    </div>
-
-                    <div class="space-y-2">
-                        <h3 class="text-lg font-heading font-bold text-white">4. Používání automatizovaných systémů (Boti a autoclickery)</h3>
-                        <p>Systém je určen pouze pro reálné fyzické osoby. Používání jakýchkoliv automatizovaných skriptů, autoclickerů, botů nebo aplikací měnících zdrojový kód za účelem umělého generování coinů je hrubým porušením podmínek. Provádíme nepřetržité audity aktivit; jakákoliv podezřelá aktivita znamená okamžité zamítnutí výplaty a smazání účtu bez náhrady.</p>
-                    </div>
-
-                    <div class="space-y-2">
-                        <h3 class="text-lg font-heading font-bold text-white">5. Poplatky platebních brán</h3>
-                        <p>Z každé úspěšně schválené výplaty je stržen jednotný fixní poplatek ve výši <strong>20 Kč</strong> určený na pokrytí transakčních nákladů a poplatků zprostředkovateli platební brány, bez ohledu na celkovou výši vybírané částky. Zbytek částky je vyplacen na zvolený platební údaj.</p>
-                    </div>
-                </div>
+        <div class="card-box bg-slate-900/60 border border-slate-800/80 p-8 rounded-3xl backdrop-blur-xl shadow-xl space-y-6 text-sm text-slate-300 leading-relaxed">
+            <div class="space-y-2 pb-4 border-b border-slate-800/80">
+                <h3 class="text-lg font-heading font-bold text-white">Identifikace provozovatele</h3>
+                <p>
+                    Provozovatelem platformy je fyzická osoba podnikající na základě živnostenského oprávnění.<br>
+                    <strong class="text-white block">IČO: 29926467</strong>
+                    <span class="text-slate-400 font-mono block">Sídlo: Sokolská 1883/8</span>
+                    <span class="text-slate-400 font-mono">120 00 Praha 2 - Nové Město</span>
+                </p>
             </div>
 
+            <div class="space-y-2">
+                <h3 class="text-lg font-heading font-bold text-white">1. Ruční schvalování výplat a bezpečnostní audity</h3>
+                <p><strong>Žádné výplaty neprobíhají automaticky.</strong> Každá žádost o výběr peněz prochází důkladným manuálním bezpečnostním auditem a kontrolou ze strany administrátora. Platforma si vyhrazuje právo ověřit původ veškerých nasbíraných coinů, zejména u uživatelů čerpajících odměny z referral sítí.</p>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-lg font-heading font-bold text-white">2. Ochrana proti podvodům a zákaz Multi-Accountingu</h3>
+                <p>Je přísně zakázáno vytvářet více než jeden uživatelský účet (multi-accounting), zejména pak registrovat nové účty pod svým vlastním referral odkazem za účelem neoprávněného zisku. Stejně tak je zakázáno využívat VPN, proxy servery nebo jiná řešení pro skrývání identity. Detekce takového chování vede k okamžité a trvalé blokaci všech přidružených účtů a zabavení nasbíraných prostředků.</p>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-lg font-heading font-bold text-white">3. Pravidla pro testování her, webů a psaní recenzí</h3>
+                <p>Uživatelé jsou povinni dodržovat pravidla třetích stran (partnerských herních studií a inzerentů). Jakékoliv podvádění při plnění herních výzev, používání generátorů screenů nebo odesílání zkopírovaných a plagiátorských recenzí je důvodem k okamžitému zamítnutí odměny a zablokování účtu.</p>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-lg font-heading font-bold text-white">4. Používání automatizovaných systémů (Boti a autoclickery)</h3>
+                <p>Systém je určen pouze pro reálné fyzické osoby. Používání jakýchkoliv automatizovaných skriptů, autoclickerů, botů nebo aplikací měnících zdrojový kód za účelem umělého generování coinů je hrubým porušením podmínek. Provádíme nepřetržité audity aktivit; jakákoliv podezřelá aktivita znamená okamžité zamítnutí výplaty a smazání účtu bez náhrady.</p>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-lg font-heading font-bold text-white">5. Poplatky platebních brán</h3>
+                <p>Z každé úspěšně schválené výplaty je stržen jednotný fixní poplatek ve výši <strong>20 Kč</strong> určený na pokrytí transakčních nákladů a poplatků zprostředkovateli platební brány, bez ohledu na celkovou výši vybírané částky. Zbytek částky je vyplacen na zvolený platební údaj.</p>
+            </div>
+        </div>
+    </div>
             <!-- Sekce Kontakt -->
             <div id="section-contact" class="section space-y-6">
                 <div class="space-y-2">
@@ -1502,7 +1539,7 @@
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            // Spuštění CPX dotazníků při přepnutí na sekci
+            // TADY PŘIDÁME TENTO ŘÁDEK PRO SPUSTĚNÍ DOTAZNÍKŮ:
             if (sectionId === 'surveys') {
                 initCPXSurveyWall();
             }
