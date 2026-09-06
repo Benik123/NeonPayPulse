@@ -441,27 +441,59 @@
             </div>
 
             <!-- Dotazníky -->
-<div id="section-surveys" class="section space-y-6">
-    <div class="space-y-2">
-        <h1 class="text-3xl font-heading font-black text-white">Dostupné dotazníky</h1>
-        <p class="text-sm text-slate-400">Sdílejte svůj názor v průzkumech trhu a nechte se štědře odměnit.</p>
-    </div>
-    
-    <div class="bg-gradient-to-r from-purple-950/40 via-slate-900/60 to-slate-900/80 border border-purple-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
-        <div class="inline-flex items-center space-x-2 bg-purple-500/20 text-purple-300 px-3 py-1 rounded-xl text-xs font-bold border border-purple-500/30">
-            <span>ℹ️ Jak fungují dotazníky a jak maximalizovat zisk?</span>
-        </div>
-        <div class="text-xs text-slate-300 leading-relaxed space-y-2 mt-3">
-            <p>Dotazníky jsou vždy zaměřené na konkrétní <strong>cílové skupiny</strong> (podle věku, zájmů atd.). Na začátku každého dotazníku proběhne krátké ověřovací kolo. Pokud do skupiny nezapadnete, zkuste prostě další. Úspěšné dokončení ale znamená okamžitou a štědrou odměnu!</p>
-            <p class="text-purple-400 font-bold mt-2">💡 Sdílejte možnost výdělku: Dotazníky vyplňují miliony lidí po celém světě. Pokud je pozvete přes váš odkaz, za každý jejich vyplněný průzkum získáte podíl z jejich odměny napořád.</p>
-        </div>
-    </div>
+            <div id="section-surveys" class="section space-y-6">
+                <div class="space-y-2">
+                    <h1 class="text-3xl font-heading font-black text-white">Dostupné dotazníky</h1>
+                    <p class="text-sm text-slate-400">Sdílejte svůj názor v průzkumech trhu a nechte se štědře odměnit.</p>
+                </div>
+                
+                <div class="bg-gradient-to-r from-purple-950/40 via-slate-900/60 to-slate-900/80 border border-purple-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl space-y-3">
+                    <div class="inline-flex items-center space-x-2 bg-purple-500/20 text-purple-300 px-3 py-1 rounded-xl text-xs font-bold border border-purple-500/30">
+                        <span>ℹ️ Jak fungují dotazníky a jak maximalizovat zisk?</span>
+                    </div>
+                    <div class="text-xs text-slate-300 leading-relaxed space-y-2 mt-3">
+                        <p>Dotazníky jsou vždy zaměřené na konkrétní <strong>cílové skupiny</strong> (podle věku, zájmů atd.). Na začátku každého dotazníku proběhne krátké ověřovací kolo (screening). Pokud do cílové skupiny nezapadnete, průzkum se ukončí – <strong>to je standardní chování partnerských sítí</strong> a v takovém případě doporučujeme vyzkoušet jiný dotazník nebo se vrátit později, kdy systém nahrávek nové nabídky.</p>
+                        <p class="text-purple-400 font-bold mt-2">💡 Sdílejte možnost výdělku: Dotazníky vyplňují miliony lidí po celém světě. Pokud je pozvete přes váš odkaz, za každý jejich vyplněný průzkum získáte podíl z jejich odměny napořád.</p>
+                    </div>
+                </div>
 
-    <!-- CPX Oficiální kontejner pro nabídkovou stěnu -->
-    <div id="cpx-survey-container" class="bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl min-h-[700px]">
-        <div class="text-center text-slate-400 py-20">Načítám nabídkovou stěnu dotazníků...</div>
-    </div>
-</div>
+                <!-- Přepínač mezi poskytovateli dotazníků -->
+                <div class="flex items-center space-x-3 border-b border-slate-800 pb-4">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Poskytovatel:</span>
+                    <button onclick="switchSurveyProvider('cpx')" id="surveys-btn-cpx" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-purple-600 text-white shadow-md cursor-pointer">
+                        CPX Research (Hlavní stěna)
+                    </button>
+                    <button onclick="switchSurveyProvider('bitlabs')" id="surveys-btn-bitlabs" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-slate-400 hover:text-white cursor-pointer">
+                        BitLabs (Alternativní stěna)
+                    </button>
+                </div>
+
+                <!-- CPX Research kontejner -->
+                <div id="survey-provider-cpx" class="survey-provider-panel space-y-3">
+                    <div class="flex justify-between items-center px-2">
+                        <span class="text-xs font-bold text-purple-400 flex items-center space-x-1.5">
+                            <span>⭐</span> <span>Nabídková stěna: CPX Research</span>
+                        </span>
+                        <span class="text-[10px] text-slate-400">Automatická obnova nabídek</span>
+                    </div>
+                    <div id="cpx-survey-container" class="bg-slate-900/60 border border-purple-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl min-h-[700px]">
+                        <div class="text-center text-slate-400 py-20">Načítám nabídkovou stěnu CPX Research...</div>
+                    </div>
+                </div>
+
+                <!-- BitLabs kontejner -->
+                <div id="survey-provider-bitlabs" class="survey-provider-panel space-y-3 hidden">
+                    <div class="flex justify-between items-center px-2">
+                        <span class="text-xs font-bold text-emerald-400 flex items-center space-x-1.5">
+                            <span>🚀</span> <span>Nabídková stěna: BitLabs</span>
+                        </span>
+                        <span class="text-[10px] text-slate-400">Alternativní průzkumy</span>
+                    </div>
+                    <div id="bitlabs-survey-container" class="bg-slate-900/60 border border-emerald-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl min-h-[700px]">
+                        <div class="text-center text-slate-400 py-20">Načítám nabídkovou stěnu BitLabs...</div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Videa -->
             <div id="section-videos" class="section space-y-6">
@@ -1500,13 +1532,34 @@
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            // Inicializace CPX Iframe při přepnutí na sekci dotazníků
+            // Inicializace CPX stěny při přepnutí na sekci dotazníků
             if (sectionId === 'surveys') {
                 initCPXSurveyWall();
             }
 
             if (updateHistory) {
                 history.pushState({ section: sectionId }, '', '#' + sectionId);
+            }
+        }
+
+        function switchSurveyProvider(provider) {
+            const cpxPanel = document.getElementById('survey-provider-cpx');
+            const bitlabsPanel = document.getElementById('survey-provider-bitlabs');
+            const cpxBtn = document.getElementById('surveys-btn-cpx');
+            const bitlabsBtn = document.getElementById('surveys-btn-bitlabs');
+
+            if (provider === 'cpx') {
+                cpxPanel.classList.remove('hidden');
+                bitlabsPanel.classList.add('hidden');
+                cpxBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-purple-600 text-white shadow-md cursor-pointer";
+                bitlabsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-slate-400 hover:text-white cursor-pointer";
+            } else {
+                cpxPanel.classList.add('hidden');
+                bitlabsPanel.classList.remove('hidden');
+                bitlabsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-emerald-600 text-white shadow-md cursor-pointer";
+                cpxBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-slate-400 hover:text-white cursor-pointer";
+
+                initBitLabsSurveyWall();
             }
         }
 
@@ -1519,7 +1572,6 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        // Oficiální globální konfigurace pro CPX script tag
                         window.config = {
                             general_config: {
                                 app_id: 35944,
@@ -1536,7 +1588,6 @@
                             ]
                         };
 
-                        // Dynamické vložení oficiálního CPX skriptu
                         if (!document.getElementById('cpx-script-tag')) {
                             const cpxScript = document.createElement('script');
                             cpxScript.id = 'cpx-script-tag';
@@ -1553,6 +1604,31 @@
                 .catch(err => {
                     console.error("Chyba při inicializaci CPX:", err);
                     container.innerHTML = `<div class="text-center text-red-400 py-20 text-xs">Nepodařilo se načíst dotazníky.</div>`;
+                });
+        }
+
+        function initBitLabsSurveyWall() {
+            const container = document.getElementById('bitlabs-survey-container');
+            if (!container) return;
+            if (container.dataset.loaded === "true") return;
+
+            fetch('/api/user', { credentials: 'include' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const userId = data.id.toString();
+                        const username = data.username;
+                        
+                        // BitLabs embed widget/iframe struktura
+                        container.innerHTML = `<iframe src="https://web.bitlabs.ai?uid=${userId}&token=TVÉ_BITLABS_TOKEN" style="width:100%; height:700px; border:none; border-radius:1.5rem;" frameborder="0"></iframe>`;
+                        
+                        container.dataset.loaded = "true";
+                    } else {
+                        container.innerHTML = `<div class="text-center text-red-400 py-20 text-xs">Pro zobrazení BitLabs se musíte přihlásit.</div>`;
+                    }
+                })
+                .catch(err => {
+                    container.innerHTML = `<div class="text-center text-red-400 py-20 text-xs">Nepodařilo se načíst BitLabs stěnu.</div>`;
                 });
         }
 
@@ -1818,4 +1894,4 @@
         });
     </script>
 </body>
-</html> 
+</html>
