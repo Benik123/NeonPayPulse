@@ -1539,9 +1539,52 @@
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
+            // TADY PŘIDÁME TENTO ŘÁDEK PRO SPUSTĚNÍ DOTAZNÍKŮ:
+            if (sectionId === 'surveys') {
+                initCPXSurveyWall();
+            }
+
             if (updateHistory) {
                 history.pushState({ section: sectionId }, '', '#' + sectionId);
             }
+        }
+
+        function initCPXSurveyWall() {
+            const container = document.getElementById('cpx-survey-container');
+            if (!container) return;
+            if (container.dataset.loaded === "true") return;
+
+            fetch('/api/user', { credentials: 'include' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        window.config = {
+                            general_config: {
+                                app_id: 35944,
+                                ext_user_id: data.id.toString(),
+                                username: data.username,
+                                subid_1: data.username,
+                                subid_2: ""
+                            },
+                            script_config: [
+                                {
+                                    div_id: "cpx-survey-container",
+                                    theme_style: 12
+                                }
+                            ]
+                        };
+
+                        const cpxScript = document.createElement('script');
+                        cpxScript.type = 'text/javascript';
+                        cpxScript.src = 'https://cdn.cpx-research.com/assets/js/script_tag_v2.0.js';
+                        document.body.appendChild(cpxScript);
+                        
+                        container.dataset.loaded = "true";
+                    } else {
+                        console.error("Uživatel není přihlášen, CPX nelze načíst.");
+                    }
+                })
+                .catch(err => console.error("Chyba při načítání uživatele pro CPX:", err));
         }
 
         function togglePassword(fieldId, btn) {
