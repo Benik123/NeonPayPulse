@@ -446,7 +446,7 @@
 
          
 
-            <!-- Dotazníky -->
+ <!-- Dotazníky -->
 <div id="section-surveys" class="section space-y-6">
     <div class="space-y-2">
         <h1 class="text-3xl font-heading font-black text-white">Dostupné dotazníky</h1>
@@ -464,8 +464,8 @@
     </div>
 
     <!-- CPX Research Survey Wall Container -->
-    <div id="cpx-survey-container" class="bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl min-h-[500px]">
-        <!-- Sem CPX automaticky nahraje seznam dotazníků -->
+    <div id="cpx-survey-container" class="bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl min-h-[650px] flex items-center justify-center">
+        <p class="text-slate-400 text-sm">Načítám dotazníky...</p>
     </div>
 </div>
 
@@ -1558,21 +1558,22 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        window.config = {
-                            general_config: {
-                                app_id: 35944,
-                                ext_user_id: data.id.toString(),
-                                username: data.username,
-                                subid_1: data.username,
-                                subid_2: ""
-                            },
-                            script_config: [
-                                {
-                                    div_id: "cpx-survey-container",
-                                    theme_style: 12
-                                }
-                            ]
-                        };
+                        const appId = 35944;
+                        const userId = data.id.toString();
+                        const username = data.username;
+
+                        container.innerHTML = `<iframe src="https://oferwall.cpx-research.com/index.php?app_id=${appId}&ext_user_id=${userId}&subid_1=${username}" style="width:100%; height:650px; border:none; border-radius:1.5rem;" frameborder="0"></iframe>`;
+                        
+                        container.dataset.loaded = "true";
+                    } else {
+                        container.innerHTML = `<p class="text-red-400 text-sm">Pro zobrazení dotazníků se musíte přihlásit.</p>`;
+                    }
+                })
+                .catch(err => {
+                    console.error("Chyba při načítání uživatele pro CPX:", err);
+                    container.innerHTML = `<p class="text-red-400 text-sm">Chyba při načítání dotazníků.</p>`;
+                });
+        }
 
                         const cpxScript = document.createElement('script');
                         cpxScript.type = 'text/javascript';
