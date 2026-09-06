@@ -464,8 +464,10 @@
     </div>
 
     <!-- CPX Research Survey Wall Container -->
-<div id="cpx-survey-container" class="bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl min-h-[500px]">
-    <!-- Sem CPX automaticky nahraje seznam dotazníků -->
+    <div id="cpx-survey-container" class="bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl backdrop-blur-xl shadow-xl min-h-[600px] flex flex-col items-center justify-center">
+        <!-- Sem CPX automaticky nahraje seznam dotazníků -->
+        <p class="text-slate-400 text-sm animate-pulse">Načítám dostupné dotazníky...</p>
+    </div>
 </div>
 
 <script>
@@ -473,7 +475,7 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                // 1. Nejprve nastavíme konfiguraci
+                // 1. Zachovaná konfigurace pro jistotu
                 window.config = {
                     general_config: {
                         app_id: 35944,
@@ -490,11 +492,13 @@
                     ]
                 };
 
-                // 2. A až potom vytvoříme a připojíme skript, aby měl data k dispozici
-                const cpxScript = document.createElement('script');
-                cpxScript.type = 'text/javascript';
-                cpxScript.src = 'https://cdn.cpx-research.com/assets/js/script_tag_v2.0.js';
-                document.body.appendChild(cpxScript);
+                // 2. Přímé vykreslení iframe, aby se box ihned naplnil
+                const appId = 35944;
+                const userId = data.id.toString();
+                const username = data.username;
+
+                const container = document.getElementById('cpx-survey-container');
+                container.innerHTML = `<iframe src="https://offerwall.cpx-research.com/index.php?app_id=${appId}&ext_user_id=${userId}&subid_1=${username}" style="width:100%; height:650px; border:none; border-radius:1.5rem;" frameborder="0"></iframe>`;
             } else {
                 console.error("Uživatel není přihlášen, CPX nelze načíst.");
             }
