@@ -26,17 +26,17 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://*.cpx-research.com", "https://*.cpx-research.assets"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://*.cpx-research.com"],
             scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "https://*.cpx-research.com", "https://*.cpx-research.assets"],
-            frameSrc: ["'self'", "https://*.cpx-research.com", "https://*.cpx-research.assets"],
-            frameAncestors: ["'none'"]
+            connectSrc: ["'self'", "https://*.cpx-research.com"],
+            frameSrc: ["'self'", "https://*.cpx-research.com", "https://offerwall.cpx-research.com"],
+            frameAncestors: ["'self'"]
         }
     },
-    frameguard: { action: 'deny' },
+    frameguard: false, // Vypneme globální blokování iframe
     referrerPolicy: { policy: 'same-origin' },
     hidePoweredBy: true
 }));
