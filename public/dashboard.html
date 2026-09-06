@@ -473,6 +473,7 @@
     fetch('/api/user')
         .then(res => res.json())
         .then(data => {
+            console.log("DEBUG - Načtená data uživatele:", data);
             if (data.success) {
                 window.config = {
                     general_config: {
