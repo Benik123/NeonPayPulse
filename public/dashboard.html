@@ -457,11 +457,9 @@
                     </div>
                 </div>
 
-                <!-- Seznam dotazníků (karty vyrenderované z JSON dat) -->
-                <div id="cpx-survey-container" class="space-y-4">
-                    <div class="bg-slate-900/60 border border-slate-800/80 p-8 rounded-3xl text-center text-slate-400">
-                        Načítám dostupné dotazníky...
-                    </div>
+                <!-- CPX Iframe Offerwall Container -->
+                <div id="cpx-survey-container" class="bg-slate-900/60 border border-slate-800/80 p-4 rounded-3xl backdrop-blur-xl shadow-xl min-h-[700px]">
+                    <div class="text-center text-slate-400 py-20">Načítám zabezpečenou nabídkovou stěnu...</div>
                 </div>
             </div>
 
@@ -1502,7 +1500,7 @@
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            // Spuštění nativního renderování dotazníků při přepnutí na sekci
+            // Inicializace CPX Iframe při přepnutí na sekci dotazníků
             if (sectionId === 'surveys') {
                 initCPXSurveyWall();
             }
@@ -1519,63 +1517,22 @@
 
             fetch('/api/user', { credentials: 'include' })
                 .then(res => res.json())
-                .then(userData => {
-                    if (!userData.success) {
-                        container.innerHTML = `<div class="bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl text-center text-red-400 text-xs">Pro zobrazení dotazníků se musíte přihlásit.</div>`;
-                        return;
-                    }
-
-                    const appId = 35944;
-                    const userId = userData.id.toString();
-                    const username = userData.username;
-
-                    const apiUrl = `https://offerwall.cpx-research.com/api/get-surveys.php?app_id=${appId}&ext_user_id=${userId}&subid_1=${username}&type=json`;
-
-                    return fetch(apiUrl);
-                })
-                .then(res => res.json())
                 .then(data => {
-                    if (!data || !data.surveys || data.surveys.length === 0) {
-                        container.innerHTML = `<div class="bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl text-center text-slate-400 text-xs">V tuto chvíli nejsou k dispozici žádné dotazníky. Zkuste to prosím později.</div>`;
-                        return;
+                    if (data.success) {
+                        const appId = 35944;
+                        const userId = data.id.toString();
+                        const username = data.username;
+
+                        container.innerHTML = `<iframe src="https://oferwall.cpx-research.com/index.php?app_id=${appId}&ext_user_id=${userId}&subid_1=${username}" style="width:100%; height:700px; border:none; border-radius:1.5rem;" frameborder="0"></iframe>`;
+                        
+                        container.dataset.loaded = "true";
+                    } else {
+                        container.innerHTML = `<div class="text-center text-red-400 py-10 text-xs">Pro zobrazení dotazníků se musíte přihlásit.</div>`;
                     }
-
-                    container.innerHTML = '';
-
-                    data.surveys.forEach(survey => {
-                        const payoutCoins = Math.round(parseFloat(survey.payout) * 10);
-                        const rewardCzk = parseFloat(survey.payout).toFixed(2);
-                        
-                        const card = document.createElement('div');
-                        card.className = "bg-slate-900/60 border border-slate-800/80 p-5 rounded-3xl backdrop-blur-xl shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-purple-500/40 transition";
-                        
-                        card.innerHTML = `
-                            <div class="space-y-1">
-                                <div class="flex items-center space-x-2">
-                                    <span class="bg-purple-500/20 text-purple-300 px-2.5 py-0.5 rounded-lg text-[10px] font-bold border border-purple-500/30">Průzkum trhu</span>
-                                    <span class="text-xs text-slate-400">⏱️ cca ${survey.loi || 5} min</span>
-                                </div>
-                                <h4 class="text-sm font-bold text-white pt-1">Dostupný dotazník #${survey.id}</h4>
-                                <p class="text-xs text-slate-400">Kategorie: ${survey.category || 'General'}</p>
-                            </div>
-                            <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4">
-                                <div class="text-right">
-                                    <span class="text-emerald-400 font-black text-sm block">+${payoutCoins.toLocaleString()} coinů</span>
-                                    <span class="text-[10px] text-slate-400">(${rewardCzk} Kč)</span>
-                                </div>
-                                <a href="https://offerwall.cpx-research.com/index.php?app_id=35944&ext_user_id=${window.currentUserId || ''}&survey_id=${survey.id}" target="_blank" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-heading font-bold text-xs rounded-xl transition shadow-md whitespace-nowrap">
-                                    Vyplnit dotazník ➔
-                                </a>
-                            </div>
-                        `;
-                        container.appendChild(card);
-                    });
-
-                    container.dataset.loaded = "true";
                 })
                 .catch(err => {
-                    console.error("Chyba při načítání CPX dotazníků:", err);
-                    container.innerHTML = `<div class="bg-slate-900/60 border border-slate-800/80 p-6 rounded-3xl text-center text-red-400 text-xs">Nepodařilo se načíst dotazníky. Zkuste obnovit stránku.</div>`;
+                    console.error("Chyba při inicializaci CPX iframe:", err);
+                    container.innerHTML = `<div class="text-center text-red-400 py-10 text-xs">Nepodařilo se načíst dotazníky.</div>`;
                 });
         }
 
@@ -1703,7 +1660,6 @@
                 const data = await response.json();
                 if (data.success) {
                     document.getElementById('username-display').innerText = data.username;
-                    window.currentUserId = data.id; // Uložení ID pro použití v dotaznících
                     let totalCoins = data.balance * 100; 
                     updateBalanceDisplay(totalCoins);
                     
