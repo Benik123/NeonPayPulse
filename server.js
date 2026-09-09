@@ -26,13 +26,13 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://*.cpx-research.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://*.cpx-research.com", "https://www.theoremreach.com"],
             scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "https://*.cpx-research.com"],
-            frameSrc: ["'self'", "https://*.cpx-research.com", "https://offerwall.cpx-research.com"],
+            connectSrc: ["'self'", "https://*.cpx-research.com", "https://www.theoremreach.com"],
+            frameSrc: ["'self'", "https://*.cpx-research.com", "https://offerwall.cpx-research.com", "https://www.theoremreach.com"],
             frameAncestors: ["'self'"]
         }
     },
@@ -222,9 +222,9 @@ const csrfProtection = (req, res, next) => {
     next();
 };
 
-// Vyloučíme externí webhooky (jako CPX postback) z CSRF kontroly, protože přicházejí ze serverů třetí strany
+// Vyloučíme externí webhooky z CSRF kontroly, protože přicházejí ze serverů třetí strany
 app.use((req, res, next) => {
-    if (req.path.startsWith('/api/cpx-postback')) {
+    if (req.path.startsWith('/api/cpx-postback') || req.path.startsWith('/api/theoremreach-callback')) {
         return next();
     }
     return csrfProtection(req, res, next);
@@ -318,6 +318,57 @@ app.get('/api/cpx-postback', async (req, res) => {
         return res.send('OK');
     } catch (err) {
         console.error('Chyba v CPX Postbacku:', err);
+        return res.status(500).send('Internal Server Error');
+    }
+});
+
+// --- THEOREMREACH CALLBACK ENDPOINT ---
+app.get('/api/theoremreach-callback', async (req, res) => {
+    const { user_id, reward, tx_id, status } = req.query;
+
+    if (!user_id || !reward || !tx_id) {
+        return res.status(400).send('Missing required parameters');
+    }
+
+    const rewardAmount = parseFloat(reward) || 0.00;
+    const isCompleted = status === '1' || status === 'completed' || !status;
+
+    try {
+        const userResult = await db.execute({
+            sql: `SELECT username, balance FROM users WHERE id = ? OR username = ?`,
+            args: [user_id, user_id]
+        });
+        const user = userResult.rows[0];
+
+        if (!user) {
+            return res.status(404).send('User not found');
+        }
+
+        const username = user.username;
+        let newBalance = user.balance;
+
+        if (isCompleted) {
+            newBalance = Number((user.balance + rewardAmount).toFixed(2));
+            const tx = await db.transaction("write");
+            try {
+                await tx.execute({
+                    sql: `UPDATE users SET balance = ? WHERE username = ?`,
+                    args: [newBalance, username]
+                });
+                await tx.execute({
+                    sql: `INSERT INTO logs (username, action, amount) VALUES (?, ?, ?)`,
+                    args: [username, 'theoremreach-survey-completed', rewardAmount]
+                });
+                await tx.commit();
+            } catch (txErr) {
+                await tx.rollback();
+                throw txErr;
+            }
+        }
+
+        return res.send('OK');
+    } catch (err) {
+        console.error('Chyba v TheoremReach Callbacku:', err);
         return res.status(500).send('Internal Server Error');
     }
 });
