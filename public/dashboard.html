@@ -1666,7 +1666,19 @@
                 .then(data => {
                     if (data.success) {
                         const userId = data.id.toString();
-                        container.innerHTML = `<iframe src="https://www.theoremreach.com/respondent/full?api_key=ecded021173048972aa58e7e787e&user_id=${userId}" style="width:100%; height:700px; border:none; border-radius:1.5rem;" frameborder="0"></iframe>`;
+                        container.innerHTML = `
+                            <div style="text-align: center; padding: 60px 20px;">
+                                <h3 style="color: white; font-size: 1.5rem; font-weight: bold; margin-bottom: 15px;">Nabídková stěna TheoremReach</h3>
+                                <p style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 30px; max-width: 500px; margin-left: auto; margin-right: auto;">
+                                    Kliknutím na tlačítko níže otevřeš nabídku dotazníků v novém okně. Po úspěšném vyplnění ti budou coiny automaticky připsány na účet.
+                                </p>
+                                <a href="https://www.theoremreach.com/respondent/full?api_key=ecded021173048972aa58e7e787e&user_id=${userId}" 
+                                   target="_blank" 
+                                   class="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-heading font-black text-sm rounded-xl transition shadow-lg shadow-amber-500/20 inline-block cursor-pointer">
+                                   Spustit dotazníky TheoremReach 🚀
+                                </a>
+                            </div>
+                        `;
                         container.dataset.loaded = "true";
                     } else {
                         container.innerHTML = `<div class="text-center text-red-400 py-20 text-xs">Pro zobrazení TheoremReach se musíte přihlásit.</div>`;
