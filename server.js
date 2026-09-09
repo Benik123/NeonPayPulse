@@ -26,17 +26,17 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://*.cpx-research.com", "https://www.theoremreach.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://*.cpx-research.com", "https://*.theoremreach.com"],
             scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "https://*.cpx-research.com", "https://www.theoremreach.com"],
-            frameSrc: ["'self'", "https://*.cpx-research.com", "https://offerwall.cpx-research.com", "https://www.theoremreach.com"],
+            connectSrc: ["'self'", "https://*.cpx-research.com", "https://*.theoremreach.com"],
+            frameSrc: ["'self'", "https://*.cpx-research.com", "https://offerwall.cpx-research.com", "https://*.theoremreach.com"],
             frameAncestors: ["'self'"]
         }
     },
-    frameguard: false, // Vypneme globální blokování iframe
+    frameguard: false,
     referrerPolicy: { policy: 'same-origin' },
     hidePoweredBy: true
 }));
