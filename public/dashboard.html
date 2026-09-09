@@ -459,14 +459,17 @@
                 </div>
 
                 <!-- Přepínač mezi poskytovateli dotazníků -->
-                <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 border-b border-slate-800 pb-5">
-                    <span class="text-xs font-heading font-black text-slate-300 uppercase tracking-widest">Výběr poskytovatele:</span>
+                <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 border-b border-slate-800 pb-5 overflow-x-auto">
+                    <span class="text-xs font-heading font-black text-slate-300 uppercase tracking-widest whitespace-nowrap">Výběr poskytovatele:</span>
                     <div class="flex items-center space-x-3">
-                        <button onclick="switchSurveyProvider('cpx')" id="surveys-btn-cpx" class="px-5 py-3 rounded-2xl text-xs font-bold transition bg-purple-600 text-white shadow-lg shadow-purple-600/30 cursor-pointer">
+                        <button onclick="switchSurveyProvider('cpx')" id="surveys-btn-cpx" class="px-5 py-3 rounded-2xl text-xs font-bold transition bg-purple-600 text-white shadow-lg shadow-purple-600/30 cursor-pointer whitespace-nowrap">
                             ⭐ CPX Research
                         </button>
-                        <button onclick="switchSurveyProvider('bitlabs')" id="surveys-btn-bitlabs" class="px-5 py-3 rounded-2xl text-xs font-bold transition bg-slate-900 border border-slate-800 text-slate-300 hover:text-white cursor-pointer">
+                        <button onclick="switchSurveyProvider('bitlabs')" id="surveys-btn-bitlabs" class="px-5 py-3 rounded-2xl text-xs font-bold transition bg-slate-900 border border-slate-800 text-slate-300 hover:text-white cursor-pointer whitespace-nowrap">
                             🚀 BitLabs
+                        </button>
+                        <button onclick="switchSurveyProvider('theoremreach')" id="surveys-btn-theoremreach" class="px-5 py-3 rounded-2xl text-xs font-bold transition bg-slate-900 border border-slate-800 text-slate-300 hover:text-white cursor-pointer whitespace-nowrap">
+                            📋 TheoremReach
                         </button>
                     </div>
                 </div>
@@ -496,7 +499,21 @@
                         <div class="text-center text-slate-400 py-20">Načítám nabídkovou stěnu BitLabs...</div>
                     </div>
                 </div>
+
+                <!-- TheoremReach kontejner -->
+                <div id="survey-provider-theoremreach" class="survey-provider-panel space-y-3 hidden">
+                    <div class="flex justify-between items-center px-2">
+                        <span class="text-xs font-bold text-amber-400 flex items-center space-x-1.5">
+                            <span>📋</span> <span>Nabídková stěna: TheoremReach</span>
+                        </span>
+                        <span class="text-[10px] text-slate-400">Průzkumy s vysokou úspěšností</span>
+                    </div>
+                    <div id="theoremreach-survey-container" class="bg-slate-900/60 border border-amber-500/30 p-6 rounded-3xl backdrop-blur-xl shadow-xl min-h-[700px]">
+                        <div class="text-center text-slate-400 py-20">Načítám nabídkovou stěnu TheoremReach...</div>
+                    </div>
+                </div>
             </div>
+
             <!-- Videa -->
             <div id="section-videos" class="section space-y-6">
                 <div class="space-y-2">
@@ -1534,7 +1551,6 @@
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            // Inicializace CPX stěny při přepnutí na sekci dotazníků
             if (sectionId === 'surveys') {
                 initCPXSurveyWall();
             }
@@ -1547,21 +1563,31 @@
         function switchSurveyProvider(provider) {
             const cpxPanel = document.getElementById('survey-provider-cpx');
             const bitlabsPanel = document.getElementById('survey-provider-bitlabs');
+            const theoremreachPanel = document.getElementById('survey-provider-theoremreach');
+            
             const cpxBtn = document.getElementById('surveys-btn-cpx');
             const bitlabsBtn = document.getElementById('surveys-btn-bitlabs');
+            const theoremreachBtn = document.getElementById('surveys-btn-theoremreach');
+
+            cpxPanel.classList.add('hidden');
+            bitlabsPanel.classList.add('hidden');
+            theoremreachPanel.classList.add('hidden');
+            
+            cpxBtn.className = "px-5 py-3 rounded-2xl text-xs font-bold transition bg-slate-900 border border-slate-800 text-slate-300 hover:text-white cursor-pointer whitespace-nowrap";
+            bitlabsBtn.className = "px-5 py-3 rounded-2xl text-xs font-bold transition bg-slate-900 border border-slate-800 text-slate-300 hover:text-white cursor-pointer whitespace-nowrap";
+            theoremreachBtn.className = "px-5 py-3 rounded-2xl text-xs font-bold transition bg-slate-900 border border-slate-800 text-slate-300 hover:text-white cursor-pointer whitespace-nowrap";
 
             if (provider === 'cpx') {
                 cpxPanel.classList.remove('hidden');
-                bitlabsPanel.classList.add('hidden');
-                cpxBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-purple-600 text-white shadow-md cursor-pointer";
-                bitlabsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-slate-400 hover:text-white cursor-pointer";
-            } else {
-                cpxPanel.classList.add('hidden');
+                cpxBtn.className = "px-5 py-3 rounded-2xl text-xs font-bold transition bg-purple-600 text-white shadow-lg shadow-purple-600/30 cursor-pointer whitespace-nowrap";
+            } else if (provider === 'bitlabs') {
                 bitlabsPanel.classList.remove('hidden');
-                bitlabsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-emerald-600 text-white shadow-md cursor-pointer";
-                cpxBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-slate-800 text-slate-400 hover:text-white cursor-pointer";
-
+                bitlabsBtn.className = "px-5 py-3 rounded-2xl text-xs font-bold transition bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 cursor-pointer whitespace-nowrap";
                 initBitLabsSurveyWall();
+            } else if (provider === 'theoremreach') {
+                theoremreachPanel.classList.remove('hidden');
+                theoremreachBtn.className = "px-5 py-3 rounded-2xl text-xs font-bold transition bg-amber-600 text-white shadow-lg shadow-amber-600/30 cursor-pointer whitespace-nowrap";
+                initTheoremReachSurveyWall();
             }
         }
 
@@ -1619,11 +1645,7 @@
                 .then(data => {
                     if (data.success) {
                         const userId = data.id.toString();
-                        const username = data.username;
-                        
-                        // BitLabs embed widget/iframe struktura
                         container.innerHTML = `<iframe src="https://web.bitlabs.ai?uid=${userId}&token=TVÉ_BITLABS_TOKEN" style="width:100%; height:700px; border:none; border-radius:1.5rem;" frameborder="0"></iframe>`;
-                        
                         container.dataset.loaded = "true";
                     } else {
                         container.innerHTML = `<div class="text-center text-red-400 py-20 text-xs">Pro zobrazení BitLabs se musíte přihlásit.</div>`;
@@ -1631,6 +1653,27 @@
                 })
                 .catch(err => {
                     container.innerHTML = `<div class="text-center text-red-400 py-20 text-xs">Nepodařilo se načíst BitLabs stěnu.</div>`;
+                });
+        }
+
+        function initTheoremReachSurveyWall() {
+            const container = document.getElementById('theoremreach-survey-container');
+            if (!container) return;
+            if (container.dataset.loaded === "true") return;
+
+            fetch('/api/user', { credentials: 'include' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const userId = data.id.toString();
+                        container.innerHTML = `<iframe src="https://www.theoremreach.com/respondent/full?api_key=ecded021173048972aa58e7e787e&user_id=${userId}" style="width:100%; height:700px; border:none; border-radius:1.5rem;" frameborder="0"></iframe>`;
+                        container.dataset.loaded = "true";
+                    } else {
+                        container.innerHTML = `<div class="text-center text-red-400 py-20 text-xs">Pro zobrazení TheoremReach se musíte přihlásit.</div>`;
+                    }
+                })
+                .catch(err => {
+                    container.innerHTML = `<div class="text-center text-red-400 py-20 text-xs">Nepodařilo se načíst TheoremReach stěnu.</div>`;
                 });
         }
 
