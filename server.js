@@ -12,6 +12,9 @@ const helmet = require('helmet');
 const cors = require('cors');
 const { body, validationResult } = require('express-validator');
 
+// --- INICIALIZACE STRIPE ---
+const stripe = require('stripe')('sk_test_51UGK6X2zlVDhAtlh4bTiHMFX9DVURTRprZkpIrO9bdiH07MNAlMtmHAE6lmQguK1jjt3tTKbOx6LgSyP4mC73DTO00g3yrQw5D'); // Použit tvůj testovací klíč ze Sandboxu
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -26,13 +29,13 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://*.cpx-research.com", "https://*.theoremreach.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://js.stripe.com", "https://*.stripe.com", "https://*.cpx-research.com", "https://*.theoremreach.com"],
             scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", "https://*.cpx-research.com", "https://*.theoremreach.com"],
-            frameSrc: ["'self'", "https://*.cpx-research.com", "https://offerwall.cpx-research.com", "https://*.theoremreach.com"],
+            connectSrc: ["'self'", "https://api.stripe.com", "https://*.stripe.com", "https://*.cpx-research.com", "https://*.theoremreach.com"],
+            frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com", "https://*.cpx-research.com", "https://offerwall.cpx-research.com", "https://*.theoremreach.com"],
             frameAncestors: ["'self'"]
         }
     },
@@ -253,6 +256,54 @@ app.get('/api/admin/security-logs', async (req, res) => {
 
     const result = await db.execute(`SELECT * FROM security_logs ORDER BY id DESC LIMIT 50`);
     res.json({ success: true, logs: result.rows || [] });
+});
+
+// --- STRIPE CHECKOUT ENDPOINT (PRO VIP BALÍČKY) ---
+app.post('/api/create-checkout-session', earnLimiter, async (req, res) => {
+    if (!req.session.username) {
+        return res.status(401).json({ success: false, error: 'Nepřihlášen' });
+    }
+
+    const { actionType } = req.body;
+
+    // Ceny VIP balíčků v haléřích (CZK)
+    const vipPrices = {
+        'buy-vip-bronze': { name: 'NeonPayPulse - Bronz VIP (30 dní)', amount: 14900 }, // 149 Kč
+        'buy-vip-silver': { name: 'NeonPayPulse - Silver VIP (30 dní)', amount: 29900 }, // 299 Kč
+        'buy-vip-gold': { name: 'NeonPayPulse - Gold VIP (30 dní)', amount: 49900 }    // 499 Kč
+    };
+
+    const selectedVip = vipPrices[actionType];
+
+    if (!selectedVip) {
+        return res.status(400).json({ success: false, error: 'Neplatný VIP balíček.' });
+    }
+
+    try {
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'czk',
+                        product_data: {
+                            name: selectedVip.name,
+                        },
+                        unit_amount: selectedVip.amount,
+                    },
+                    quantity: 1,
+                },
+            ],
+            mode: 'payment',
+            success_url: 'https://neonpaypulse.com/dashboard.html?payment=success&session_id={CHECKOUT_SESSION_ID}',
+            cancel_url: 'https://neonpaypulse.com/dashboard.html?payment=cancelled',
+        });
+
+        res.json({ success: true, id: session.id });
+    } catch (error) {
+        console.error('Chyba při vytváření Stripe session:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 // --- CPX RESEARCH POSTBACK ENDPOINT ---
