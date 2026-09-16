@@ -926,6 +926,13 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Právní info a odkaz na VOP pro zákazníky a Stripe -->
+                <div class="text-center pt-4">
+                    <p class="text-xs text-slate-500">
+                        Nákupem podléháte <a href="/vop.html" target="_blank" class="text-emerald-400 hover:underline">Všeobecným obchodním podmínkám a reklamačnímu řádu</a>. Poskytovatelem digitálních služeb je provozovatel platformy.
+                    </p>
+                </div>
             </div>
 
            <!-- Výplaty -->
@@ -1966,7 +1973,7 @@
                 alert('Nastala chyba při připojení k platební bráně.');
             }
         }
-        
+
         function updateSettings(type) {
             if (type === 'password') {
                 const newPass = document.getElementById('setting-new-password').value;
