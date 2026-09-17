@@ -17,12 +17,6 @@ const helmet = require('helmet');
 const cors = require('cors');
 const { body, validationResult } = require('express-validator');
 
-// --- BEZPEČNÁ INICIALIZACE STRIPE ---
-const rawStripeKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY || 'sk_live_placeholder';
-const cleanStripeKey = rawStripeKey.trim();
-console.log("DEBUG STRIPE KEY LENGTH:", cleanStripeKey.length, "PREFIX:", cleanStripeKey.substring(0, 7));
-const stripe = require('stripe')(cleanStripeKey);
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -272,13 +266,22 @@ app.post('/api/create-checkout-session', earnLimiter, async (req, res) => {
         return res.status(401).json({ success: false, error: 'Nepřihlášen' });
     }
 
+    // Načteme klíč až tady dynamicky z Railway prostředí
+    const rawKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY || '';
+    const stripeKey = rawKey.trim();
+
+    if (!stripeKey || stripeKey.includes('placeholder')) {
+        console.error("CHYBA STRIPE: V proměnných prostředí chybí platný STRIPE_SECRET_KEY!");
+        return res.status(500).json({ success: false, error: 'Chyba serveru: Platby kartou nejsou nakonfigurovány.' });
+    }
+
+    const stripe = require('stripe')(stripeKey);
     const { actionType } = req.body;
 
-    // Ceny VIP balíčků v haléřích (CZK)
     const vipPrices = {
-        'buy-vip-bronze': { name: 'NeonPayPulse - Bronz VIP (30 dní)', amount: 14900 }, // 149 Kč
-        'buy-vip-silver': { name: 'NeonPayPulse - Silver VIP (30 dní)', amount: 29900 }, // 299 Kč
-        'buy-vip-gold': { name: 'NeonPayPulse - Gold VIP (30 dní)', amount: 49900 }    // 499 Kč
+        'buy-vip-bronze': { name: 'NeonPayPulse - Bronz VIP (30 dní)', amount: 14900 }, 
+        'buy-vip-silver': { name: 'NeonPayPulse - Silver VIP (30 dní)', amount: 29900 }, 
+        'buy-vip-gold': { name: 'NeonPayPulse - Gold VIP (30 dní)', amount: 49900 }    
     };
 
     const selectedVip = vipPrices[actionType];
