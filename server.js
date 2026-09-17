@@ -228,7 +228,6 @@ const csrfProtection = (req, res, next) => {
     next();
 };
 
-// Vyloučíme externí webhooky z CSRF kontroly, protože přicházejí ze serverů třetí strany
 app.use((req, res, next) => {
     if (req.path.startsWith('/api/cpx-postback') || req.path.startsWith('/api/theoremreach-callback')) {
         return next();
@@ -267,15 +266,8 @@ app.post('/api/create-checkout-session', earnLimiter, async (req, res) => {
         return res.status(401).json({ success: false, error: 'Nepřihlášen' });
     }
 
-    // Načteme klíč až tady dynamicky z Railway prostředí
-    const rawKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY || '';
-    const stripeKey = rawKey.trim();
-
-    if (!stripeKey || stripeKey.includes('placeholder')) {
-        console.error("CHYBA STRIPE: V proměnných prostředí chybí platný STRIPE_SECRET_KEY!");
-        return res.status(500).json({ success: false, error: 'Chyba serveru: Platby kartou nejsou nakonfigurovány.' });
-    }
-
+    // Inicializujeme Stripe přímo z klíče v Railway (bez umělých blokací)
+    const stripeKey = (process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY || '').trim();
     const stripe = require('stripe')(stripeKey);
     const { actionType } = req.body;
 
@@ -314,7 +306,8 @@ app.post('/api/create-checkout-session', earnLimiter, async (req, res) => {
         res.json({ success: true, id: session.id });
     } catch (error) {
         console.error('Chyba při vytváření Stripe session:', error);
-        res.status(500).json({ success: false, error: error.message });
+        // Pokud ve Stripe nastane chyba, vypíšeme ji přímo na webu, abychom hned věděli co a jak
+        res.status(500).json({ success: false, error: 'Stripe chyba: ' + error.message });
     }
 });
 
