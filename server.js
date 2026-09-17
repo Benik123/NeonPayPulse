@@ -13,7 +13,9 @@ const cors = require('cors');
 const { body, validationResult } = require('express-validator');
 
 // --- INICIALIZACE STRIPE ---
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // Použit tvůj testovací klíč ze Sandboxu
+const stripeApiKey = process.env.STRIPE_SECRET_KEY;
+console.log("DEBUG STRIPE KEY:", stripeApiKey ? "Klíč je načtený" : "CHYBÍ KLÍČ!");
+const stripe = require('stripe')(stripeApiKey); // Použit tvůj testovací klíč ze Sandboxu
 
 const app = express();
 const PORT = process.env.PORT || 3000;
