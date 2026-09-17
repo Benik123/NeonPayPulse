@@ -13,9 +13,13 @@ const cors = require('cors');
 const { body, validationResult } = require('express-validator');
 
 // --- INICIALIZACE STRIPE ---
-const stripeApiKey = process.env.STRIPE_SECRET_KEY;
-console.log("DEBUG STRIPE KEY:", stripeApiKey ? "Klíč je načtený" : "CHYBÍ KLÍČ!");
-const stripe = require('stripe')(stripeApiKey); // Použit tvůj testovací klíč ze Sandboxu
+const stripeApiKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY;
+if (!stripeApiKey) {
+    console.error("DEBUG STRIPE KEY: CHYBÍ KLÍČ!");
+} else {
+    console.log("DEBUG STRIPE KEY: Klíč je úspěšně načtený!");
+}
+const stripe = require('stripe')(stripeApiKey || 'sk_test_placeholder');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
