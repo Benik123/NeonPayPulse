@@ -1,4 +1,5 @@
 console.log("TEST: SERVER SE SPUSTIL A TENTO SOUBOR BĚŽÍ!");
+console.log("VŠECHNY DOSTUPNÉ ENV KLÍČE:", Object.keys(process.env));
 
 // Načte .env pouze lokálně, na Railway se spoléháme na dashboard
 if (process.env.NODE_ENV !== 'production') {
