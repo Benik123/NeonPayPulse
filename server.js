@@ -17,10 +17,11 @@ const helmet = require('helmet');
 const cors = require('cors');
 const { body, validationResult } = require('express-validator');
 
-// --- INICIALIZACE STRIPE ---
-const stripeApiKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY || 'sk_live_placeholder';
-console.log("DEBUG STRIPE KEY STATUS:", process.env.STRIPE_SECRET_KEY ? "Načteno z Railway" : "POUŽIT NOUZOVÝ REŽIM");
-const stripe = require('stripe')(stripeApiKey);
+// --- BEZPEČNÁ INICIALIZACE STRIPE ---
+const rawStripeKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY || 'sk_live_placeholder';
+const cleanStripeKey = rawStripeKey.trim();
+console.log("DEBUG STRIPE KEY LENGTH:", cleanStripeKey.length, "PREFIX:", cleanStripeKey.substring(0, 7));
+const stripe = require('stripe')(cleanStripeKey);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
