@@ -13,7 +13,7 @@ const cors = require('cors');
 const { body, validationResult } = require('express-validator');
 
 // --- INICIALIZACE STRIPE ---
-const stripe = require('stripe')('sk_test_51UGK6X2zlVDhAtlh4bTiHMFX9DVURTRprZkpIrO9bdiH07MNAlMtmHAE6lmQguK1jjt3tTKbOx6LgSyP4mC73DTO00g3yrQw5D'); // Použit tvůj testovací klíč ze Sandboxu
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY); // Použit tvůj testovací klíč ze Sandboxu
 
 const app = express();
 const PORT = process.env.PORT || 3000;
