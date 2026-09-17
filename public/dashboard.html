@@ -33,7 +33,7 @@
 <body class="bg-[#030712] text-slate-100 min-h-screen flex selection:bg-emerald-500 selection:text-slate-950 transition-colors duration-300" id="body-root">
 
     <!-- Postranní panel (Sidebar) -->
-    <aside id="sidebar-root" class="w-72 bg-slate-950/80 border-r border-slate-800/80 backdrop-blur-xl h-screen p-6 flex flex-col justify-between fixed left-0 top-0 z-20 overflow-y-auto transition-colors duration-300">
+    <aside id="sidebar-root" class="w-72 bg-slate-950/80 border-r border-slate-800/80 backdrop-blur-xl h-screen p-6 hidden md:flex flex-col justify-between fixed left-0 top-0 z-20 overflow-y-auto transition-colors duration-300">
         <div class="space-y-6">
             <!-- Logo -->
             <div class="flex items-center space-x-3 group cursor-pointer">
@@ -123,7 +123,7 @@
     </aside>
 
     <!-- Hlavní obsah -->
-    <main class="flex-grow ml-72 p-10 min-h-screen overflow-y-auto">
+    <main class="flex-grow ml-0 md:ml-72 p-4 sm:p-10 min-h-screen overflow-y-auto w-full">
         <div class="max-w-5xl mx-auto space-y-6">
 
             <!-- Přehled -->
