@@ -288,7 +288,7 @@ app.post('/api/create-checkout-session', earnLimiter, async (req, res) => {
             line_items: [
                 {
                     price_data: {
-                        currency: 'czk',
+                        currency: 'usd',
                         product_data: {
                             name: selectedVip.name,
                         },
