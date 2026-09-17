@@ -266,9 +266,8 @@ app.post('/api/create-checkout-session', earnLimiter, async (req, res) => {
         return res.status(401).json({ success: false, error: 'Nepřihlášen' });
     }
 
-    // Inicializujeme Stripe přímo z klíče v Railway (bez umělých blokací)
-    const stripeKey = (process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY || '').trim();
-    const stripe = require('stripe')(stripeKey);
+    // Klíč vložený natvrdo pro ověření funkčnosti
+    const stripe = require('stripe')('sk_test_51UGK6X2zlVDhAtlh4bTiHMFX9DVURTRprZkpIrO9bdiH07MNAlMtmHAE6lmQguK1jjt3tTKbOx6LgSyP4mC73DTO00g3yrQw5D');
     const { actionType } = req.body;
 
     const vipPrices = {
@@ -306,7 +305,6 @@ app.post('/api/create-checkout-session', earnLimiter, async (req, res) => {
         res.json({ success: true, id: session.id });
     } catch (error) {
         console.error('Chyba při vytváření Stripe session:', error);
-        // Pokud ve Stripe nastane chyba, vypíšeme ji přímo na webu, abychom hned věděli co a jak
         res.status(500).json({ success: false, error: 'Stripe chyba: ' + error.message });
     }
 });
