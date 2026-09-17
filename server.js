@@ -1,5 +1,10 @@
 console.log("TEST: SERVER SE SPUSTIL A TENTO SOUBOR BĚŽÍ!");
-require('dotenv').config();
+
+// Načte .env pouze lokálně, na Railway se spoléháme na dashboard
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config();
+}
+
 const express = require('express');
 const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
@@ -13,13 +18,9 @@ const cors = require('cors');
 const { body, validationResult } = require('express-validator');
 
 // --- INICIALIZACE STRIPE ---
-const stripeApiKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY;
-if (!stripeApiKey) {
-    console.error("DEBUG STRIPE KEY: CHYBÍ KLÍČ!");
-} else {
-    console.log("DEBUG STRIPE KEY: Klíč je úspěšně načtený!");
-}
-const stripe = require('stripe')(stripeApiKey || 'sk_test_placeholder');
+const stripeApiKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_KEY || 'sk_live_placeholder';
+console.log("DEBUG STRIPE KEY STATUS:", process.env.STRIPE_SECRET_KEY ? "Načteno z Railway" : "POUŽIT NOUZOVÝ REŽIM");
+const stripe = require('stripe')(stripeApiKey);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
