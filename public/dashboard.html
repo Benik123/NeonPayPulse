@@ -32,61 +32,10 @@
 </head>
 <body class="bg-[#030712] text-slate-100 min-h-screen flex selection:bg-emerald-500 selection:text-slate-950 transition-colors duration-300" id="body-root">
 
-<!-- Responzivní horní lišta / Navbar -->
-<nav class="bg-gray-900 border-b border-gray-800 text-white sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-            
-            <!-- Logo / Název webu -->
-            <div class="flex items-center">
-                <span class="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                    NeonPayPulse
-                </span>
-            </div>
 
-            <!-- Odkazy pro velké obrazovky (PC) -->
-            <div class="hidden md:flex items-center space-x-6">
-                <a href="dashboard.html" class="hover:text-cyan-400 transition">Domů</a>
-                <a href="#earn" class="hover:text-cyan-400 transition">Vydělávat</a>
-                <a href="#vip" class="hover:text-cyan-400 transition">VIP</a>
-                <a href="#payout" class="hover:text-cyan-400 transition">Výplaty</a>
-                <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded text-sm transition">Odhlásit</button>
-            </div>
-
-            <!-- Tlačítko hamburger menu pro mobily -->
-            <div class="flex md:hidden">
-                <button id="mobile-menu-button" class="text-gray-400 hover:text-white focus:outline-none p-2">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </button>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- Rozbalovací menu pro mobily (standardně schované) -->
-    <div id="mobile-menu" class="hidden md:hidden bg-gray-900 border-b border-gray-800 px-4 pt-2 pb-4 space-y-2">
-        <a href="dashboard.html" class="block py-2 hover:text-cyan-400 transition">Domů</a>
-        <a href="#earn" class="block py-2 hover:text-cyan-400 transition">Vydělávat</a>
-        <a href="#vip" class="block py-2 hover:text-cyan-400 transition">VIP</a>
-        <a href="#payout" class="block py-2 hover:text-cyan-400 transition">Výplaty</a>
-        <button onclick="logout()" class="w-full text-left py-2 text-red-500 hover:text-red-400 transition">Odhlásit</button>
-    </div>
-</nav>
-
-<!-- JavaScript pro otevírání a zavírání mobilního menu -->
-<script>
-    const btn = document.getElementById('mobile-menu-button');
-    const menu = document.getElementById('mobile-menu');
-
-    btn.addEventListener('click', () => {
-        menu.classList.toggle('hidden');
-    });
-</script>
-
+    
     <!-- Postranní panel (Sidebar) -->
-<aside id="sidebar-root" class="w-72 bg-slate-950/90 md:bg-slate-950/80 border-r border-slate-800/80 backdrop-blur-xl h-screen p-6 hidden md:flex flex-col justify-between fixed left-0 top-0 z-50 overflow-y-auto transition-colors duration-300">
+<aside id="sidebar-root" class="w-72 bg-slate-950 border-r border-slate-800 backdrop-blur-xl h-screen p-6 hidden md:block fixed inset-y-0 left-0 z-50 shadow-2xl">
     <div class="space-y-6">
         <!-- Logo a mobilní křížek pro zavření -->
         <div class="flex items-center justify-between group">
