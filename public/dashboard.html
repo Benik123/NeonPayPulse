@@ -32,10 +32,18 @@
 </head>
 <body class="bg-[#030712] text-slate-100 min-h-screen flex selection:bg-emerald-500 selection:text-slate-950 transition-colors duration-300" id="body-root">
 
-
+<!-- Mobilní horní lišta s tlačítkem menu (viditelná jen na mobilu) -->
+<div class="md:hidden bg-slate-950 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+    <span class="text-white font-bold text-lg">NeonPayPulse</span>
+    <button id="mobile-menu-toggle" class="text-slate-400 hover:text-white focus:outline-none p-2">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+    </button>
+</div>
     
     <!-- Postranní panel (Sidebar) -->
-<aside id="sidebar-root" class="w-72 bg-slate-950 border-r border-slate-800 backdrop-blur-xl h-screen p-6 hidden md:block fixed inset-y-0 left-0 z-50 shadow-2xl">
+<aside id="sidebar-root" class="w-72 bg-slate-950 border-r border-slate-800 backdrop-blur-xl h-screen p-6 hidden md:block overflow-y-auto shrink-0">
     <div class="space-y-6">
         <!-- Logo a mobilní křížek pro zavření -->
         <div class="flex items-center justify-between group">
@@ -2004,7 +2012,7 @@
             }
         }
 
-        function updateSettings(type) {
+    function updateSettings(type) {
             if (type === 'password') {
                 const newPass = document.getElementById('setting-new-password').value;
                 const confirmPass = document.getElementById('setting-confirm-password').value;
@@ -2042,6 +2050,20 @@
                 switchSection(section, false);
             });
         });
+
+        // Logika pro otevírání a zavírání mobilního menu
+        const mobileToggle = document.getElementById('mobile-menu-toggle');
+        const sidebar = document.getElementById('sidebar-root');
+
+        if (mobileToggle && sidebar) {
+            mobileToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('hidden');
+                sidebar.classList.toggle('fixed');
+                sidebar.classList.toggle('inset-y-0');
+                sidebar.classList.toggle('left-0');
+                sidebar.classList.toggle('z-50');
+            });
+        }
     </script>
 </body>
 </html>
