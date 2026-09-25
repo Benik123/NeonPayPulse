@@ -2051,17 +2051,35 @@
             });
         });
 
-        // Logika pro otevírání a zavírání mobilního menu
+        // Vylepšená logika pro mobilní menu (vysunutí a automatické zavření po kliknutí na odkaz)
         const mobileToggle = document.getElementById('mobile-menu-toggle');
         const sidebar = document.getElementById('sidebar-root');
 
         if (mobileToggle && sidebar) {
-            mobileToggle.addEventListener('click', () => {
+            mobileToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
                 sidebar.classList.toggle('hidden');
                 sidebar.classList.toggle('fixed');
                 sidebar.classList.toggle('inset-y-0');
                 sidebar.classList.toggle('left-0');
                 sidebar.classList.toggle('z-50');
+            });
+
+            // Zavření menu při kliknutí kamkoliv jinam na stránce nebo na odkaz v menu
+            document.addEventListener('click', (event) => {
+                const isClickInside = sidebar.contains(event.target) || mobileToggle.contains(event.target);
+                if (!isClickInside && !sidebar.classList.contains('hidden')) {
+                    sidebar.classList.add('hidden');
+                    sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50');
+                }
+            });
+
+            // Zavření menu i po kliknutí na jakýkoliv odkaz uvnitř sidebaru
+            sidebar.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    sidebar.classList.add('hidden');
+                    sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-50');
+                });
             });
         }
     </script>
