@@ -1715,42 +1715,26 @@
         }
 
         function initTheoremReachSurveyWall() {
-    const container = document.getElementById('theoremreach-survey-container');
-    if (!container) return;
-    if (container.dataset.loaded === "true") return;
+            const container = document.getElementById('theoremreach-survey-container');
+            if (!container) return;
+            if (container.dataset.loaded === "true") return;
 
-    fetch('/api/user', { credentials: 'include' })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                const userId = data.id.toString();
-                
-                // Vytvoříme hezký designový box s funkčním tlačítkem
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center py-20 text-center space-y-6">
-                        <div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-3xl flex items-center justify-center text-3xl border border-amber-500/30">📋</div>
-                        <div class="space-y-2 max-w-md">
-                            <h3 class="text-xl font-heading font-bold text-white">Nabídková stěna TheoremReach</h3>
-                            <p class="text-xs text-slate-400 leading-relaxed">
-                                Kliknutím na tlačítko níže otevřeš ověřenou nabídku exkluzivních dotazníků s vysokou úspěšností schválení.
-                            </p>
-                        </div>
-                        <button onclick="window.open('https://www.theoremreach.com/respondent/full?api_key=ecded021173048972aa58e7e787e&user_id=${userId}', '_blank')" 
-                                class="px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-heading font-black text-xs rounded-xl transition shadow-lg shadow-amber-500/25 cursor-pointer">
-                            Spustit dotazníky TheoremReach 🚀
-                        </button>
-                    </div>
-                `;
-                container.dataset.loaded = "true";
-            } else {
-                container.innerHTML = `<div class="text-center text-red-400 py-20 text-xs">Pro zobrazení TheoremReach se musíte přihlásit.</div>`;
-            }
-        })
-        .catch(err => {
-            container.innerHTML = `<div class="text-center text-red-400 py-20 text-xs">Nepodařilo se načíst TheoremReach stěnu.</div>`;
-        });
-}
-
+            fetch('/api/user', { credentials: 'include' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const userId = data.id.toString();
+                        // Použijeme embed endpoint, aby se dotazníky zobrazil rovnou uvnitř jako u CPX/BitLabs
+                        container.innerHTML = `<iframe src="https://www.theoremreach.com/respondent/embed?api_key=ecded021173048972aa58e7e787e&user_id=${userId}" style="width:100%; height:700px; border:none; border-radius:1.5rem;" frameborder="0"></iframe>`;
+                        container.dataset.loaded = "true";
+                    } else {
+                        container.innerHTML = `<div class="text-center text-red-400 py-20 text-xs">Pro zobrazení TheoremReach se musíte přihlásit.</div>`;
+                    }
+                })
+                .catch(err => {
+                    container.innerHTML = `<div class="text-center text-red-400 py-20 text-xs">Nepodařilo se načíst TheoremReach stěnu.</div>`;
+                });
+        }
         function togglePassword(fieldId, btn) {
             const input = document.getElementById(fieldId);
             if (input.type === 'password') {
