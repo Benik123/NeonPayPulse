@@ -1874,7 +1874,7 @@
             
             // Tady se nyní automaticky doplní reálné ID uživatele
             const statUserId = document.getElementById('stat-user-id');
-if (statUserId) statUserId.innerText = '#' + (11499 + data.id);
+if (statUserId) statUserId.innerText = (11499 + data.id);
 
             let totalCoins = data.balance * 100; 
             updateBalanceDisplay(totalCoins);
