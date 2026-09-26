@@ -1865,32 +1865,37 @@
         }
 
         async function loadUserData() {
-            try {
-                const response = await fetch('/api/user', { credentials: 'include' });
-                if (!response.ok) return;
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('username-display').innerText = data.username;
-                    let totalCoins = data.balance * 100; 
-                    updateBalanceDisplay(totalCoins);
-                    
-                    const fullRefLink = window.location.origin + '/register.html?ref=' + data.referralCode;
-                    
-                    const homeRef = document.getElementById('home-ref-link');
-                    if(homeRef) homeRef.value = fullRefLink;
-                    const refCode = document.getElementById('ref-code-display');
-                    if(refCode) refCode.innerText = data.referralCode;
-                    const refLinkDisp = document.getElementById('ref-link-display');
-                    if(refLinkDisp) refLinkDisp.innerText = fullRefLink;
+    try {
+        const response = await fetch('/api/user', { credentials: 'include' });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.success) {
+            document.getElementById('username-display').innerText = data.username;
+            
+            // Tady se nyní automaticky doplní reálné ID uživatele
+            const statUserId = document.getElementById('stat-user-id');
+            if (statUserId) statUserId.innerText = '#' + data.id;
 
-                    updateBannerPreview();
-                }
-                loadLogs();
-                loadReferralStats();
-            } catch (err) {
-                console.error('Chyba při načítání dat:', err);
-            }
+            let totalCoins = data.balance * 100; 
+            updateBalanceDisplay(totalCoins);
+            
+            const fullRefLink = window.location.origin + '/register.html?ref=' + data.referralCode;
+            
+            const homeRef = document.getElementById('home-ref-link');
+            if(homeRef) homeRef.value = fullRefLink;
+            const refCode = document.getElementById('ref-code-display');
+            if(refCode) refCode.innerText = data.referralCode;
+            const refLinkDisp = document.getElementById('ref-link-display');
+            if(refLinkDisp) refLinkDisp.innerText = fullRefLink;
+
+            updateBannerPreview();
         }
+        loadLogs();
+        loadReferralStats();
+    } catch (err) {
+        console.error('Chyba při načítání dat:', err);
+    }
+}
 
         async function loadReferralStats() {
             try {
@@ -1999,7 +2004,7 @@
                     return;
                 }
 
-const result = await stripe.redirectToCheckout({
+                const result = await stripe.redirectToCheckout({
                     sessionId: data.id
                 });
 
