@@ -1733,14 +1733,13 @@
                                 <div class="space-y-2 max-w-md">
                                     <h3 class="text-xl font-heading font-bold text-white">Nabídková stěna TheoremReach</h3>
                                     <p class="text-xs text-slate-400 leading-relaxed">
-                                        Kliknutím na tlačítko níže otevřeš exkluzivní nabídku dotazníků.
+                                        Kliknutím na tlačítko níže otevřeš interaktivní panel dotazníků.
                                     </p>
                                 </div>
-                                <a href="https://www.theoremreach.com/respondent/democracy?api_key=ecded021173048972aa58e7e787e&user_id=${userId}" 
-                                   target="_blank" 
-                                   class="px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-heading font-black text-xs rounded-xl transition shadow-lg shadow-amber-500/25 cursor-pointer inline-block">
+                                <button onclick="if(typeof TheoremReach !== 'undefined') { TheoremReach.init({ api_key: 'ecded021173048972aa58e7e787e', user_id: '${userId}' }); TheoremReach.show(); } else { alert('TheoremReach skript se ještě načítá, zkuste to za chvíli.'); }" 
+                                        class="px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-heading font-black text-xs rounded-xl transition shadow-lg shadow-amber-500/25 cursor-pointer">
                                     Spustit dotazníky TheoremReach 🚀
-                                </a>
+                                </button>
                             </div>
                         `;
                         container.dataset.loaded = "true";
